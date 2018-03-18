@@ -48,6 +48,8 @@ import org.slf4j.LoggerFactory;
  */
 public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
+    private RachioBindingConfiguration bindingConfig;
+    private RachioBindingConfiguration thingConfig = new RachioBindingConfiguration();
     private final List<RachioStatusListener> rachioStatusListeners = new CopyOnWriteArrayList<>();
     private final RachioApi rachioApi;
     private final RachioNetwork network;
@@ -76,6 +78,10 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
         network = new RachioNetwork();
     }
 
+    public void setConfiguration(RachioBindingConfiguration defaultConfig) {
+        bindingConfig = defaultConfig;
+    }
+
     /**
      * Initialize the bridge/cloud handler. Creates a connection to the Rachio Cloud, reads devices + zones and
      * initialized the Thing mapping.
@@ -83,6 +89,9 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     @Override
     public void initialize() {
         try {
+            thingConfig = bindingConfig;
+            thingConfig.updateConfig(getConfig().getProperties());
+
             logger.debug("RachioBridgeHandler: Connecting to Rachio cloud");
             createCloudConnection(rachioApi);
             updateProperties();
@@ -236,15 +245,15 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @throws LoginException if there is an error while authenticating to the service
      */
     private void createCloudConnection(RachioApi api) throws Exception {
-        RachioBindingConfiguration bindingConfig = getConfigAs(RachioBindingConfiguration.class);
-        Configuration config = getThing().getConfiguration();
-        bindingConfig.apiKey = (String) config.get(RachioBindingConfiguration.PARAM_APIKEY);
-        if (bindingConfig.apiKey.isEmpty()) {
+        // RachioBindingConfiguration bindingConfig = getConfigAs(RachioBindingConfiguration.class);
+        // Configuration config = getThing().getConfiguration();
+        // bindingConfig.apiKey = (String) config.get(RachioBindingConfiguration.PARAM_APIKEY);
+        if (thingConfig.apiKey.isEmpty()) {
             throw new Exception(
                     "RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set, check services/rachio.cfg!");
         }
 
-        if (!api.initialize(bindingConfig.apiKey, this.getThing().getUID())) {
+        if (!api.initialize(thingConfig.apiKey, this.getThing().getUID())) {
             throw new Exception("Unable to connect to Rachio Cloud!");
         }
     } // createCloudConnection()

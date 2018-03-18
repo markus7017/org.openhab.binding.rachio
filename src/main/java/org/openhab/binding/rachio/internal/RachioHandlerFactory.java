@@ -25,6 +25,7 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
+import org.openhab.binding.rachio.RachioBindingConfiguration;
 import org.openhab.binding.rachio.RachioBindingConstants;
 import org.openhab.binding.rachio.handler.RachioBridgeHandler;
 import org.openhab.binding.rachio.handler.RachioDeviceHandler;
@@ -40,14 +41,13 @@ import org.slf4j.LoggerFactory;
  * The {@link RachioHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
- * @author Markus Michels (markus.michels@me.com) - Initial contribution
+ * @author Markus Michels (markus7017) - Initial contribution
  */
 @Component(service = { ThingHandlerFactory.class,
-        RachioHandlerFactory.class }, immediate = true, configurationPid = "rachio")
+        RachioHandlerFactory.class }, immediate = true, configurationPid = "binding.rachio")
 public class RachioHandlerFactory extends BaseThingHandlerFactory {
     public class RachioBridge {
         RachioBridgeHandler cloudHandler;
-        String apiKey;
         String externalId;
         ThingUID uid;
     }
@@ -55,6 +55,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     private final Logger logger = LoggerFactory.getLogger(RachioHandlerFactory.class);
     private final Map<ThingUID, ServiceRegistration<?>> discoveryServiceReg = new HashMap<>();
     private final HashMap<String, RachioBridge> bridgeList;
+    private final RachioBindingConfiguration bindingConfig = new RachioBindingConfiguration();
 
     /**
      * OSGi activation callback.
@@ -62,12 +63,9 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
      * @param config Service config.
      */
     @Activate
-    protected void activate(Map<String, Object> config) {
-        logger.debug("RachioBridge: Activate");
-        for (HashMap.Entry<String, Object> ce : config.entrySet()) {
-            logger.debug("  {}: {}", ce.getKey(), ce.getValue());
-            Object e = ce.getValue();
-        }
+    protected void activate(Map<String, Object> configProperties) {
+        logger.debug("RachioBridge: Activate, configurarion (services/binding.rachio.cfg):");
+        bindingConfig.updateConfig(configProperties);
     }
 
     public RachioHandlerFactory() {
@@ -156,9 +154,9 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     private RachioBridgeHandler createBridge(Bridge bridgeThing) {
         try {
             RachioBridge bridge = new RachioBridge();
-            bridge.cloudHandler = new RachioBridgeHandler(bridgeThing);
-            bridge.apiKey = bridge.cloudHandler.getApiKey();
             bridge.uid = bridgeThing.getUID();
+            bridge.cloudHandler = new RachioBridgeHandler(bridgeThing);
+            bridge.cloudHandler.setConfiguration(bindingConfig);
             bridge.externalId = bridge.cloudHandler.getExternalId();
             bridgeList.put(bridge.uid.toString(), bridge);
 
