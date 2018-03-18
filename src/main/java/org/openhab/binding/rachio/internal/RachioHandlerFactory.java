@@ -31,6 +31,7 @@ import org.openhab.binding.rachio.handler.RachioDeviceHandler;
 import org.openhab.binding.rachio.handler.RachioZoneHandler;
 import org.openhab.binding.rachio.internal.discovery.RachioDiscoveryService;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels (markus.michels@me.com) - Initial contribution
  */
 @Component(service = { ThingHandlerFactory.class,
-        RachioHandlerFactory.class }, immediate = true, configurationPid = "binding.rachio")
+        RachioHandlerFactory.class }, immediate = true, configurationPid = "rachio")
 public class RachioHandlerFactory extends BaseThingHandlerFactory {
     public class RachioBridge {
         RachioBridgeHandler cloudHandler;
@@ -54,6 +55,20 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     private final Logger logger = LoggerFactory.getLogger(RachioHandlerFactory.class);
     private final Map<ThingUID, ServiceRegistration<?>> discoveryServiceReg = new HashMap<>();
     private final HashMap<String, RachioBridge> bridgeList;
+
+    /**
+     * OSGi activation callback.
+     *
+     * @param config Service config.
+     */
+    @Activate
+    protected void activate(Map<String, Object> config) {
+        logger.debug("RachioBridge: Activate");
+        for (HashMap.Entry<String, Object> ce : config.entrySet()) {
+            logger.debug("  {}: {}", ce.getKey(), ce.getValue());
+            Object e = ce.getValue();
+        }
+    }
 
     public RachioHandlerFactory() {
         logger.debug("RachioHandlerFactory: Initialized Rachio Thing handler.");

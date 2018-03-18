@@ -10,7 +10,10 @@
  *
  * @author Markus Michels (markus7017) - Initial contribution
  */
-package org.openhab.binding.rachio.internal.api;
+package org.openhab.binding.rachio;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.openhab.binding.rachio.handler.RachioDeviceHandler;
@@ -19,7 +22,7 @@ import org.openhab.binding.rachio.handler.RachioDeviceHandler;
  * The {@link RachioDeviceHandler} contains the binding configuration and default values. The field names represent the
  * configuration names, do not rename them if you don't intend to break the configuration interface.
  *
- * @author Markus Michels
+ * @author Markus Michels (markus7017)
  */
 public class RachioBindingConfiguration {
     public static final String PARAM_APIKEY = "apikey";
@@ -36,6 +39,17 @@ public class RachioBindingConfiguration {
     public String callbackUrl = "";
     public Boolean clearAllCallbacks = false;
     public String ipFilter = "";
+
+    public void initialzeConfig(Map<String, Object> config) {
+
+        for (HashMap.Entry<String, Object> ce : config.entrySet()) {
+            Object e = ce.getValue();
+            if ((e instanceof String) && ce.getKey().equals(PARAM_APIKEY)) {
+                this.apiKey = e.toString();
+            }
+        }
+
+    }
 
     public void update(@NonNull RachioBindingConfiguration newConfiguration) {
         this.apiKey = newConfiguration.apiKey;

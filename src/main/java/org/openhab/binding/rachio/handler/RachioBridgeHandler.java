@@ -29,11 +29,11 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.ConfigStatusBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.openhab.binding.rachio.RachioBindingConfiguration;
 import org.openhab.binding.rachio.RachioBindingConstants;
 import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.RachioNetwork;
 import org.openhab.binding.rachio.internal.api.RachioApi;
-import org.openhab.binding.rachio.internal.api.RachioBindingConfiguration;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.slf4j.Logger;
@@ -119,7 +119,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
              * String port[] = url.split(":");
              * int internalPort = Integer.parseInt(port[1]);
              * int externalPort = 8443;
-             * 
+             *
              * if (network.initializePortMapping(externalPort, internalPort,
              * RachioBindingConstants.PORT_REFRESH_INTERVAL)) {
              * logger.info("RachioBridge: Port mapping initialzed, external {} -> internal {}", internalPort,
