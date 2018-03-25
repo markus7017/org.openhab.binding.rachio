@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.rachio.internal;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -25,13 +27,13 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
-import org.openhab.binding.rachio.RachioBindingConfiguration;
-import org.openhab.binding.rachio.RachioBindingConstants;
 import org.openhab.binding.rachio.handler.RachioBridgeHandler;
 import org.openhab.binding.rachio.handler.RachioDeviceHandler;
 import org.openhab.binding.rachio.handler.RachioZoneHandler;
+import org.openhab.binding.rachio.internal.api.RachioEvent;
 import org.openhab.binding.rachio.internal.discovery.RachioDiscoveryService;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -44,8 +46,9 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels (markus7017) - Initial contribution
  */
 @Component(service = { ThingHandlerFactory.class,
-        RachioHandlerFactory.class }, immediate = true, configurationPid = "binding.rachio")
+        RachioHandlerFactory.class }, immediate = true, configurationPid = BINDING_ID)
 public class RachioHandlerFactory extends BaseThingHandlerFactory {
+
     public class RachioBridge {
         RachioBridgeHandler cloudHandler;
         String externalId;
@@ -55,7 +58,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     private final Logger logger = LoggerFactory.getLogger(RachioHandlerFactory.class);
     private final Map<ThingUID, ServiceRegistration<?>> discoveryServiceReg = new HashMap<>();
     private final HashMap<String, RachioBridge> bridgeList;
-    private final RachioBindingConfiguration bindingConfig = new RachioBindingConfiguration();
+    private final RachioConfiguration bindingConfig = new RachioConfiguration();
 
     /**
      * OSGi activation callback.
@@ -63,7 +66,8 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
      * @param config Service config.
      */
     @Activate
-    protected void activate(Map<String, Object> configProperties) {
+    protected void activate(ComponentContext componentContext, Map<String, Object> configProperties) {
+        super.activate(componentContext);
         logger.debug("RachioBridge: Activate, configurarion (services/binding.rachio.cfg):");
         bindingConfig.updateConfig(configProperties);
     }
@@ -75,7 +79,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
-        return RachioBindingConstants.SUPPORTED_THING_TYPES_UIDS.contains(thingTypeUID);
+        return SUPPORTED_THING_TYPES_UIDS.contains(thingTypeUID);
     }
 
     @Override
@@ -83,11 +87,11 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
         try {
             ThingTypeUID thingTypeUID = thing.getThingTypeUID();
             logger.trace("RachioHandlerFactory: Create thing handler for type {}", thingTypeUID.toString());
-            if (RachioBindingConstants.SUPPORTED_BRIDGE_THING_TYPES_UIDS.contains(thingTypeUID)) {
+            if (SUPPORTED_BRIDGE_THING_TYPES_UIDS.contains(thingTypeUID)) {
                 return createBridge((Bridge) thing);
-            } else if (RachioBindingConstants.SUPPORTED_ZONE_THING_TYPES_UIDS.contains(thingTypeUID)) {
+            } else if (SUPPORTED_ZONE_THING_TYPES_UIDS.contains(thingTypeUID)) {
                 return new RachioZoneHandler(thing);
-            } else if (RachioBindingConstants.SUPPORTED_DEVICE_THING_TYPES_UIDS.contains(thingTypeUID)) {
+            } else if (SUPPORTED_DEVICE_THING_TYPES_UIDS.contains(thingTypeUID)) {
                 return new RachioDeviceHandler(thing);
             }
         } catch (Exception e) {

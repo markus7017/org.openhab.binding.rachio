@@ -30,8 +30,8 @@ import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
+import org.openhab.binding.rachio.internal.api.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,17 +233,13 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         boolean update = false;
         try {
             dev.setEvent(event);
-            if (event.type.equals("ZONE_STATUS") || event.subType.equals("ZONE_DELTA")) {
-                String zoneId = event.eventParms.get("zoneId");
-                if (zoneId == null) {
-                    zoneId = event.eventParms.get("id");
-                }
-                HashMap<String, RachioZone> zoneList = dev.getZones();
-                RachioZone zone = zoneList.get(zoneId);
+            String etype = event.type;
+            if (etype.equals("ZONE_STATUS") /* || event.subType.equals("ZONE_DELTA") */) {
+                RachioZone zone = dev.getZoneByNumber(event.zoneRunStatus.zoneNumber);
                 if ((zone != null) && (zone.getThingHandler() != null)) {
                     return zone.getThingHandler().webhookEvent(event);
                 }
-            } else if (event.type.equals("DEVICE_STATUS")) {
+            } else if (etype.equals("DEVICE_STATUS")) {
                 logger.info("RachioDevice '{}': Device status updated ({}): {}.", dev.getName(), event.subType,
                         event.summary);
                 if (event.subType.equals("COLD_REBOOT")) {
@@ -259,14 +255,13 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                     logger.debug("    {}: old={}, new={}", delta.propertyName, delta.oldValue, delta.newValue);
                 }
                 // update = true;
-            } else if (event.type.equals("SCHEDULE_STATUS")) {
-                String name = event.eventParms.get("name");
-                String status = event.eventParms.get("status").toLowerCase();
-                String type = event.eventParms.get("type");
-                Integer estimatedDuration = Integer.parseInt(event.eventParms.get("estimatedDuration"));
-                logger.info("RachioDevice '{}': schedule'{}' {} (type={}, estimatedDuration = {}sec) - {}",
-                        dev.getName(), name, status, type, estimatedDuration, event.summary);
+            } else if (etype.equals("SCHEDULE_STATUS")) {
+                logger.info("RachioDevice '{}': schedule'{}' {} (type={}, estimatedDuration = {}sec - {})",
+                        dev.getName(), event.scheduleName, event.pushTitle, event.scheduleType, event.duration,
+                        event.summary);
                 update = true;
+            } else {
+                logger.debug("RachioDevice '{}': Unhandled event '{}_{}' ({})", etype, event.subType);
             }
 
             if (update) {

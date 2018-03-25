@@ -23,7 +23,7 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
  * The {@link RachioBindingConstants} class defines common constants, which are
  * used across the whole binding.
  *
- * @author Markus Michels (markus.michels@me.com) - Initial contribution
+ * @author Markus Michels (markus7017) - Initial contribution
  */
 @NonNullByDefault
 public class RachioBindingConstants {
@@ -50,14 +50,14 @@ public class RachioBindingConstants {
             .collect(Collectors.toSet());
 
     // List of non-standard Properties
+    public static final String PROPERTY_APIKEY = "apikey";
     public static final String PROPERTY_NAME = "name";
     public static final String PROPERTY_MODEL = "model";
-    public static final String PROPERTY_ID = "id";
-    public static final String PROPERTY_MAC_ADDRESS = "macAddress";
-    public static final String PROPERTY_SN = "serialNumber";
-    public static final String PROPERTY_APIKEY = "apiKey";
-    public static final String PROPERTY_PERSON_ID = "accountId";
-    public static final String PROPERTY_PERSON_USER = "accountName";
+    public static final String PROPERTY_EXT_ID = "externalId";
+    public static final String PROPERTY_DEV_ID = "deviceId";
+    public static final String PROPERTY_ZONE_ID = "zoneId";
+    public static final String PROPERTY_PERSON_ID = "personId";
+    public static final String PROPERTY_PERSON_USER = "userName";
     public static final String PROPERTY_PERSON_NAME = "accountFullName";
     public static final String PROPERTY_PERSON_EMAIL = "accountEMail";
 
@@ -94,4 +94,12 @@ public class RachioBindingConstants {
     // public static final String CHANNEL_ZONE_NZ_IPH = "nozzleIph";
     // public static final String CHANNEL_ZONE_NZ_IMGURL = "nozzleImageUrl";
 
+    public static final String WEBHOOK_PATH = "/rachio/webhook";
+    public static final String WEBHOOK_APPLICATION_JSON = "application/json";
+    public static final String WEBHOOK_CHARSET = "utf-8";
+    public static final String WEBHOOK_USER_AGENT = "Mozilla/5.0";
+
+    public static final String RACHIO_JSON_RATE_LIMIT = "X-RateLimit-Limit";
+    public static final String RACHIO_JSON_RATE_REMAINING = "X-RateLimit-Remaining";
+    public static final String RACHIO_JSON_RATE_RESET = "X-RateLimit-Reset";
 }

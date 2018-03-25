@@ -10,7 +10,7 @@
  *
  * @author Markus Michels (markus7017) - Initial contribution
  */
-package org.openhab.binding.rachio;
+package org.openhab.binding.rachio.internal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,62 +26,52 @@ import org.slf4j.LoggerFactory;
  *
  * @author Markus Michels (markus7017)
  */
-public class RachioBindingConfiguration {
+public class RachioConfiguration {
     private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
 
-    public static final String PARAM_APIKEY = "apiKey";
+    public static final String PARAM_APIKEY = "apikey";
     public static final String PARAM_POLLING_INTERVAL = "pollingInterval";
     public static final String PARAM_DEF_RUNTIME = "defaultRuntime";
     public static final String PARAM_CALLBACK_URL = "callbackUrl";
-    public static final String PARAM_CLEAR_CALLBAC = "callbackUrl";
+    public static final String PARAM_CLEAR_CALLBACK = "clearAllCallbacks";
     public static final String PARAM_IPFILTER = "ipFilter";
 
     public static final String ERR_APIKEY = "ERROR: No/invalid APIKEY in configuration, check services/rachio.cfg";
 
-    public String apiKey = "";
-    public int pollingInterval = 60;
+    public String apikey = "";
+    public int pollingInterval = 90;
     public int defaultRuntime = 120;
     public String callbackUrl = "";
     public Boolean clearAllCallbacks = false;
     public String ipFilter = "";
 
     public void updateConfig(Map<String, Object> config) {
-        if (config.get("service.pid") == null) {
-            return;
-        }
-
         for (HashMap.Entry<String, Object> ce : config.entrySet()) {
-            Object e = ce.getValue();
-            if (ce.getKey().equals("component.name") || ce.getKey().equals("component.id")
-                    || ce.getKey().equals("service.pid")) {
+            String key = ce.getKey();
+            String value = ce.getValue().toString();
+            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.name")) {
                 continue;
             }
-            logger.debug("  {}={}", ce.getKey(), e.toString());
-            if (ce.getKey().equals(PARAM_APIKEY)) {
-                this.apiKey = e.toString();
-            } else if (ce.getKey().equals(PARAM_POLLING_INTERVAL)) {
-                this.pollingInterval = Integer.parseInt(e.toString());
-            } else if (ce.getKey().equals(PARAM_DEF_RUNTIME)) {
-                this.defaultRuntime = Integer.parseInt(e.toString());
-            } else if (ce.getKey().equals(PARAM_CALLBACK_URL)) {
-                this.callbackUrl = e.toString();
-            } else if (ce.getKey().equals(PARAM_IPFILTER)) {
-                this.ipFilter = e.toString();
-            } else if (ce.getKey().equals(PARAM_CLEAR_CALLBAC)) {
-                String str = e.toString();
+
+            if (key.equalsIgnoreCase("service.pid")) {
+                logger.debug("Rachio: Binding configuration:");
+            }
+            logger.debug("  {}={}", key, value);
+
+            if (key.equalsIgnoreCase(PARAM_APIKEY)) {
+                apikey = value;
+            } else if (key.equalsIgnoreCase(PARAM_POLLING_INTERVAL)) {
+                this.pollingInterval = Integer.parseInt(value);
+            } else if (key.equalsIgnoreCase(PARAM_DEF_RUNTIME)) {
+                this.defaultRuntime = Integer.parseInt(value);
+            } else if (key.equalsIgnoreCase(PARAM_CALLBACK_URL)) {
+                this.callbackUrl = value;
+            } else if (key.equalsIgnoreCase(PARAM_IPFILTER)) {
+                this.ipFilter = value;
+            } else if (key.equalsIgnoreCase(PARAM_CLEAR_CALLBACK)) {
+                String str = value;
                 this.clearAllCallbacks = str.toLowerCase().equals("true");
             }
         }
     } // RachioBindingConfiguration
-
-    /*
-     * public void update(@NonNull RachioBindingConfiguration newConfiguration) {
-     * this.apiKey = newConfiguration.apiKey;
-     * this.pollingInterval = newConfiguration.pollingInterval;
-     * this.defaultRuntime = newConfiguration.defaultRuntime;
-     * this.callbackUrl = newConfiguration.callbackUrl;
-     * this.clearAllCallbacks = newConfiguration.clearAllCallbacks;
-     * this.ipFilter = newConfiguration.ipFilter;
-     * }
-     */
 }

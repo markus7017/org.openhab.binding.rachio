@@ -8,6 +8,8 @@
  */
 package org.openhab.binding.rachio.internal.api;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -19,9 +21,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.RachioHandlerFactory;
-import org.openhab.binding.rachio.internal.RachioNetwork;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -45,9 +45,6 @@ import com.google.gson.Gson;
 public class RachioWebHookServlet extends HttpServlet {
     private static final long serialVersionUID = -4654253998990066051L;
     private final Logger logger = LoggerFactory.getLogger(RachioWebHookServlet.class);
-    public static final String PATH = "/rachio/webhook";
-    private static final String APPLICATION_JSON = "application/json";
-    private static final String CHARSET = "utf-8";
     private final Gson gson = new Gson();
 
     private HttpService httpService;
@@ -61,8 +58,8 @@ public class RachioWebHookServlet extends HttpServlet {
     @Activate
     protected void activate(Map<String, Object> config) {
         try {
-            httpService.registerServlet(PATH, this, null, httpService.createDefaultHttpContext());
-            logger.info("Started Rachio Webhook servlet at {}", PATH);
+            httpService.registerServlet(WEBHOOK_PATH, this, null, httpService.createDefaultHttpContext());
+            logger.info("Started Rachio Webhook servlet at {}", WEBHOOK_PATH);
         } catch (ServletException | NamespaceException e) {
             logger.error("Could not start Rachio Webhook servlet: {}", e.getMessage(), e);
         }
@@ -73,8 +70,8 @@ public class RachioWebHookServlet extends HttpServlet {
      */
     @Deactivate
     protected void deactivate() {
-        httpService.unregister(PATH);
-        logger.info("Netatmo webhook servlet stopped");
+        httpService.unregister(WEBHOOK_PATH);
+        logger.info("RachioWebHook: Servlet stopped");
     }
 
     @SuppressWarnings("null")
@@ -82,20 +79,28 @@ public class RachioWebHookServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
         String data = inputStreamToString(request);
         try {
+            // Fix malformed API v3 Event JSON
+            data = data.replace("\"{", "{");
+            data = data.replace("}\"", "}");
+            data = data.replace("\\", "");
+
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
             }
-            logger.debug("RachioWebHook: Reqeust from {}:{}{} ({}, {})",
-                    ipAddress, request.getRemotePort(), request.getRequestURI(),
+            String path = request.getRequestURI();
+            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getProtocol());
-
-            String ipFilter = rachioHandlerFactory.getIpFilter();
-            if (!RachioNetwork.ipInSubnet(ipAddress, ipFilter)) {
-                logger.info("RachioWebHook: IP address '{}' does not match the configured filter '{}', data='{}'",
-                        ipAddress, ipFilter, data);
-                // return;
+            if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
+                logger.error("RachioWebHook: Invalid request received - path = {}", path);
+                return;
             }
+            // String ipFilter = rachioHandlerFactory.getIpFilter();
+            // if (!RachioNetwork.ipInSubnet(ipAddress, ipFilter)) {
+            // logger.info("RachioWebHook: IP address '{}' does not match the configured filter '{}', data='{}'",
+            // ipAddress, ipFilter, data);
+            // // return;
+            // }
 
             X509Certificate cert = extractCertificate(request);
             if (cert != null) {
@@ -107,16 +112,16 @@ public class RachioWebHookServlet extends HttpServlet {
                 logger.trace("RachioWebHook: Data='{}'", data);
                 RachioEvent event = gson.fromJson(data, RachioEvent.class);
                 if ((event != null) && (rachioHandlerFactory != null)) {
-                    logger.trace("RachioEvent {}.{} for device '{}': {}",
-                            event.category, event.type, event.deviceId, event.summary);
+                    logger.trace("RachioEvent {}.{} for device '{}': {}", event.category, event.type, event.deviceId,
+                            event.summary);
 
-                    /*
-                     * if (!rachioHandlerFactory.webHookEvent(event)) {
-                     * logger.debug("RachioWebHook: Event-JSON='{}'", data);
-                     * }
-                     */
-                    rachioHandlerFactory.webHookEvent(event);
-                    logger.debug("RachioWebHook: Event-JSON='{}'", data);
+                    event.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
+                            request.getHeader(RACHIO_JSON_RATE_REMAINING), request.getHeader(RACHIO_JSON_RATE_RESET));
+
+                    if (!rachioHandlerFactory.webHookEvent(event)) {
+                        logger.debug("RachioWebHook: Event-JSON='{}'", data);
+                    }
+
                     return;
                 }
                 logger.debug("RachioWebHook: Unable to process inbound request, data='{}'", data);
@@ -141,8 +146,8 @@ public class RachioWebHookServlet extends HttpServlet {
     }
 
     private void setHeaders(HttpServletResponse response) {
-        response.setCharacterEncoding(CHARSET);
-        response.setContentType(APPLICATION_JSON);
+        response.setCharacterEncoding(WEBHOOK_CHARSET);
+        response.setContentType(WEBHOOK_APPLICATION_JSON);
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "POST");
         response.setHeader("Access-Control-Max-Age", "3600");
@@ -178,4 +183,13 @@ public class RachioWebHookServlet extends HttpServlet {
         this.httpService = null;
     }
 
-}
+    public static String replace(String string, String[] toFind, String[] toReplace) {
+        if (toFind.length != toReplace.length) {
+            throw new IllegalArgumentException("Arrays must be of the same length.");
+        }
+        for (int i = 0; i < toFind.length; i++) {
+            string = string.replace(toFind[i], toReplace[i]);
+        }
+        return string;
+    }
+} // RachioWebHookServlet

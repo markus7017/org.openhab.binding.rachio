@@ -56,15 +56,26 @@ public class RachioApi {
     private static final String APIURL_NOT_GET_LIST = "notification/webhook_event_type"; // get list of available
                                                                                          // notification types
     // WebHook event types
-    public final String WHE_DEVICE_STATUS = "DEVICE_STATUS"; // "Device status event has occurred"
-    public final String WHE_RAIN_DELAY = "RAIN_DELAY"; // "A rain delay event has occurred"
-    public final String WEATHER_INTELLIGENCE = "WEATHER_INTELLIGENCE"; // A weather intelligence event has has occurred
-    public final String WHE_WATER_BUDGET = "WATER_BUDGET"; // A water budget event has occurred
-    public final String WHE_SCHEDULE_STATUS = "SCHEDULE_STATUS";
-    public final String WHE_ZONE_STATUS = "ZONE_STATUS";
-    public final String WHE_RAIN_SENSOR_DETECTION = "RAIN_SENSOR_DETECTION"; // physical rain sensor event has coccurred
-    public final String WHE_ZONE_DELTA = "ZONE_DELTA"; // A physical rain sensor event has occurred
-    public final String WHE_DELTA = "DELTA"; // "An entity has been inserted, updated, or deleted"
+    /*
+     * id:5, type=DEVICE_STATUS
+     * id:6, type=RAIN_DELAY
+     * id:7, type=WEATHER_INTELLIGENCE
+     * id:8, type=WATER_BUDGET
+     * id:9, type=SCHEDULE_STATUS
+     * id:10, type=ZONE_STATUS
+     * id:11, type=RAIN_SENSOR_DETECTION
+     * id:12, type=ZONE_DELTA
+     * id:14, type=DELTA
+     */
+    public final String WHE_DEVICE_STATUS = "5"; // "Device status event has occurred"
+    public final String WHE_RAIN_DELAY = "6"; // "A rain delay event has occurred"
+    public final String WEATHER_INTELLIGENCE = "7"; // A weather intelligence event has has occurred
+    public final String WHE_WATER_BUDGET = "8"; // A water budget event has occurred
+    public final String WHE_SCHEDULE_STATUS = "9";
+    public final String WHE_ZONE_STATUS = "10";
+    public final String WHE_RAIN_SENSOR_DETECTION = "11"; // physical rain sensor event has coccurred
+    public final String WHE_ZONE_DELTA = "12"; // A physical rain sensor event has occurred
+    public final String WHE_DELTA = "14"; // "An entity has been inserted, updated, or deleted"
 
     public class RachioApiWebHookEntry {
         public long createDate = -1;
@@ -84,7 +95,7 @@ public class RachioApi {
     private static final String JSON_OPTION_PERSON_FULLNAME = "fullName";
     private static final String JSON_OPTION_PERSON_EMAIL = "email";
 
-    protected String apiKey = "";
+    protected String apikey = "";
     protected String personId = "";
     protected String userName = "";
     protected String fullName = "";
@@ -93,16 +104,15 @@ public class RachioApi {
     public boolean masterCopy = false;
     private HashMap<String, RachioDevice> deviceList = new HashMap<String, RachioDevice>();
     protected Http api = null;
-    private Map<String, Integer> wh_eventTypes;
 
     public void setMaster() {
         masterCopy = true;
     }
 
-    public Boolean initialize(String apiKey, ThingUID bridgeUID) {
+    public Boolean initialize(String apikey, ThingUID bridgeUID) {
         try {
-            this.apiKey = apiKey;
-            api = new Http(this.apiKey);
+            this.apikey = apikey;
+            api = new Http(this.apikey);
             if (initializePersonId() && initializeDevices(bridgeUID) && initializeZones() && initializeWebHook()) {
                 logger.trace("Rachio API initialized");
                 return true;
@@ -287,27 +297,13 @@ public class RachioApi {
             // "url":"https://www.mydomain.com/another_webhook",
             // "eventTypes":[{"id":"1"},{"id":"2"}]
             // }
-            /*
-             * id:5, type=DEVICE_STATUS
-             * id:6, type=RAIN_DELAY
-             * id:7, type=WEATHER_INTELLIGENCE
-             * id:8, type=WATER_BUDGET
-             * id:9, type=SCHEDULE_STATUS
-             * id:10, type=ZONE_STATUS
-             * id:11, type=RAIN_SENSOR_DETECTION
-             * id:12, type=ZONE_DELTA
-             * id:14, type=DELTA
-             */
             logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
             String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
                     + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
-                    + wh_eventTypes.get(WHE_DEVICE_STATUS) + "\"}, " + "{\"id\" : \""
-                    + wh_eventTypes.get(WHE_RAIN_DELAY) + "\"}, " + "{\"id\" : \""
-                    + wh_eventTypes.get(WEATHER_INTELLIGENCE) + "\"}, " + "{\"id\" : \""
-                    + wh_eventTypes.get(WHE_WATER_BUDGET) + "\"}, " + "{\"id\" : \"" + wh_eventTypes.get(WHE_ZONE_DELTA)
-                    + "\"}, " + "{\"id\" : \"" + wh_eventTypes.get(WHE_SCHEDULE_STATUS) + "\"}, " + "{\"id\" : \""
-                    + wh_eventTypes.get(WHE_ZONE_STATUS) + "\"}, " + "{\"id\" : \"" + wh_eventTypes.get(WHE_DELTA)
-                    + "\"} " + "] }";
+                    + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""
+                    + WEATHER_INTELLIGENCE + "\"}, " + "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " + "{\"id\" : \""
+                    + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
+                    + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_DELTA + "\"} " + "] }";
             api.sendHttpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
             return true;
         } catch (Exception e) {
@@ -330,7 +326,6 @@ public class RachioApi {
             userName = Parse.jsonString(returnContent, JSON_OPTION_PERSON_USERNAME, "");
             fullName = Parse.jsonString(returnContent, JSON_OPTION_PERSON_FULLNAME, "");
             email = Parse.jsonString(returnContent, JSON_OPTION_PERSON_EMAIL, "");
-
             JsonArray devList = Parse.jsonObjectArray(returnContent, "devices");
             for (int i = 0; i < devList.size(); i++) {
                 JsonElement je = devList.get(i);
@@ -355,7 +350,6 @@ public class RachioApi {
         try {
             // 1st check the list of available webhook events
             String jsonEventlist = api.sendHttpGet(APIURL_BASE + APIURL_NOT_GET_LIST, null);
-            decodeEventTypes(jsonEventlist);
             return true;
         } catch (Exception e) {
             logger.error("RachioApi.registerWebHook: Exception: {}", e.getMessage());
@@ -364,41 +358,10 @@ public class RachioApi {
         return false;
     }
 
-    public boolean decodeEventTypes(String jsonEvents) {
-        logger.trace("RachioWebHook: API event types:");
-        try {
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jelement = jsonParser.parse(jsonEvents);
-            JsonArray jarray = jelement.getAsJsonArray();
-            wh_eventTypes = new HashMap<String, Integer>();
-            for (int i = 0; i < jarray.size(); i++) {
-                String json = jarray.get(i).toString();
-                String key = org.openhab.binding.rachio.internal.util.Parse.jsonString(json, "name", "");
-                Integer id = org.openhab.binding.rachio.internal.util.Parse.jsonInt(json, "id", 0);
-                logger.trace("  id:{}, type={}", id, key);
-                wh_eventTypes.put(key, id);
-            }
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioWebHook: Unable to read event types: {}", e.getMessage());
-        }
-        return false;
-    } // decodeEventTypes
-
-    public int getEventId(String Event) {
-        try {
-            return wh_eventTypes.get(Event);
-
-        } catch (Exception e) {
-            logger.error("RachioWebHook: Unable to map event type '{}' to id!: {}", Event, e.getMessage());
-            return -1;
-        }
-    }
-
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put(Thing.PROPERTY_VENDOR, RachioBindingConstants.BINDING_VENDOR);
-        properties.put(RachioBindingConstants.PROPERTY_APIKEY, apiKey);
+        properties.put(RachioBindingConstants.PROPERTY_APIKEY, apikey);
         properties.put(RachioBindingConstants.PROPERTY_PERSON_ID, personId);
         properties.put(RachioBindingConstants.PROPERTY_PERSON_USER, userName);
         properties.put(RachioBindingConstants.PROPERTY_PERSON_NAME, fullName);

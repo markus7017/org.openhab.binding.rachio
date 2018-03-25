@@ -16,6 +16,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import org.openhab.binding.rachio.internal.api.RachioEvent;
+
 import com.google.gson.Gson;
 
 /**

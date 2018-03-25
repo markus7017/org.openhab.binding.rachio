@@ -16,7 +16,7 @@
             <parameter name="apikey" type="text">
                 <label>Rachio apikey</label>
                 <description>Visit Rachio Cloud Portal to create an apikey</description>
-                <required>true</required>
+                <required>false</required>
             </parameter>
             <parameter name="pollingInterval" type="integer" min="30" step="30">
                 <label>Polling/Refresh Interval</label>
@@ -147,7 +147,7 @@
             <bridge-type-ref id="cloud" />
         </supported-bridge-type-refs>
 
-        <label>Sprinkler Zone</label>
+        <label>Rachio Sprinkler Zone</label>
         <description>A zone of a Rachio Sprinkler Controller</description>
 
         <channels>

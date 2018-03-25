@@ -29,12 +29,12 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.ConfigStatusBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
-import org.openhab.binding.rachio.RachioBindingConfiguration;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.internal.RachioEvent;
+import org.openhab.binding.rachio.internal.RachioConfiguration;
 import org.openhab.binding.rachio.internal.RachioNetwork;
 import org.openhab.binding.rachio.internal.api.RachioApi;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
+import org.openhab.binding.rachio.internal.api.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory;
  */
 public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
-    private RachioBindingConfiguration bindingConfig;
-    private RachioBindingConfiguration thingConfig = new RachioBindingConfiguration();
+    private RachioConfiguration bindingConfig;
+    private RachioConfiguration thingConfig = new RachioConfiguration();
     private final List<RachioStatusListener> rachioStatusListeners = new CopyOnWriteArrayList<>();
     private final RachioApi rachioApi;
     private final RachioNetwork network;
@@ -78,7 +78,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
         network = new RachioNetwork();
     }
 
-    public void setConfiguration(RachioBindingConfiguration defaultConfig) {
+    public void setConfiguration(RachioConfiguration defaultConfig) {
         bindingConfig = defaultConfig;
     }
 
@@ -109,9 +109,9 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
                 HashMap<String, RachioZone> zoneList = dev.getZones();
                 for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
                     RachioZone zone = ze.getValue();
-                    ThingUID zoneZhingUID = new ThingUID(RachioBindingConstants.THING_TYPE_ZONE, bridgeThing.getUID(),
+                    ThingUID zoneThingUID = new ThingUID(RachioBindingConstants.THING_TYPE_ZONE, bridgeThing.getUID(),
                             zone.getThingID());
-                    zone.setUID(dev.getUID(), zoneZhingUID);
+                    zone.setUID(dev.getUID(), zoneThingUID);
                 }
             }
 
@@ -227,7 +227,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
 
                 // Refresh UPnP port mapping
                 if (network.refreshPortMapping()) {
-                    logger.debug("RachioBridge: Port mapping refreshed.");
+                    // logger.debug("RachioBridge: Port mapping refreshed.");
                 }
             } // try
         } catch (Exception e) {
@@ -245,15 +245,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @throws LoginException if there is an error while authenticating to the service
      */
     private void createCloudConnection(RachioApi api) throws Exception {
-        // RachioBindingConfiguration bindingConfig = getConfigAs(RachioBindingConfiguration.class);
-        // Configuration config = getThing().getConfiguration();
-        // bindingConfig.apiKey = (String) config.get(RachioBindingConfiguration.PARAM_APIKEY);
-        if (thingConfig.apiKey.isEmpty()) {
+        if (thingConfig.apikey.isEmpty()) {
             throw new Exception(
                     "RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set, check services/rachio.cfg!");
         }
 
-        if (!api.initialize(thingConfig.apiKey, this.getThing().getUID())) {
+        if (!api.initialize(thingConfig.apikey, this.getThing().getUID())) {
             throw new Exception("Unable to connect to Rachio Cloud!");
         }
     } // createCloudConnection()
@@ -362,12 +359,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return the polling interval in seconds
      */
     public String getApiKey() {
-        String apiKey = getConfigAs(RachioBindingConfiguration.class).apiKey;
-        if (!apiKey.equals("")) {
-            return apiKey;
+        String apikey = getConfigAs(RachioConfiguration.class).apikey;
+        if (!apikey.equals("")) {
+            return apikey;
         }
         Configuration config = getThing().getConfiguration();
-        return (String) config.get(RachioBindingConfiguration.PARAM_APIKEY);
+        return (String) config.get(RachioConfiguration.PARAM_APIKEY);
     }
 
     /**
@@ -376,7 +373,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return the polling interval in seconds
      */
     public int getPollingInterval() {
-        return getConfigAs(RachioBindingConfiguration.class).pollingInterval;
+        return getConfigAs(RachioConfiguration.class).pollingInterval;
     }
 
     /**
@@ -385,7 +382,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return callbackUrl
      */
     public String getCallbackUrl() {
-        return getConfigAs(RachioBindingConfiguration.class).callbackUrl;
+        return getConfigAs(RachioConfiguration.class).callbackUrl;
     }
 
     /**
@@ -394,14 +391,14 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return true=clear all callbacks, false=clear only the current one (avoid multiple instances)
      */
     public Boolean getClearAllCallbacks() {
-        return getConfigAs(RachioBindingConfiguration.class).clearAllCallbacks;
+        return getConfigAs(RachioConfiguration.class).clearAllCallbacks;
     }
 
     /**
      *
      */
     public String getIpFilter() {
-        return getConfigAs(RachioBindingConfiguration.class).ipFilter;
+        return getConfigAs(RachioConfiguration.class).ipFilter;
     }
 
     /**
@@ -410,7 +407,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return the polling interval in seconds
      */
     public int getDefaultRuntime() {
-        return getConfigAs(RachioBindingConfiguration.class).defaultRuntime;
+        return getConfigAs(RachioConfiguration.class).defaultRuntime;
     }
 
     //
@@ -543,12 +540,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     public Collection<ConfigStatusMessage> getConfigStatus() {
         Collection<ConfigStatusMessage> configStatusMessages = new ArrayList<>();
 
-        RachioBindingConfiguration config = getConfigAs(RachioBindingConfiguration.class);
+        RachioConfiguration config = getConfigAs(RachioConfiguration.class);
 
-        if (config.apiKey.isEmpty()) {
-            configStatusMessages.add(ConfigStatusMessage.Builder.error(RachioBindingConfiguration.PARAM_APIKEY)
-                    .withMessageKeySuffix(RachioBindingConfiguration.ERR_APIKEY)
-                    .withArguments(RachioBindingConfiguration.PARAM_APIKEY).build());
+        if (config.apikey.isEmpty()) {
+            configStatusMessages.add(ConfigStatusMessage.Builder.error(RachioConfiguration.PARAM_APIKEY)
+                    .withMessageKeySuffix(RachioConfiguration.ERR_APIKEY)
+                    .withArguments(RachioConfiguration.PARAM_APIKEY).build());
         }
 
         return configStatusMessages;

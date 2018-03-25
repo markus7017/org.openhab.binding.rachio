@@ -11,6 +11,8 @@
 
 package org.openhab.binding.rachio.internal.util;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
@@ -32,13 +34,14 @@ import org.slf4j.LoggerFactory;
 public class Http {
     private final Logger logger = LoggerFactory.getLogger(Http.class);
 
+    private int apiCalls = 0;
+
     private static final String HTTP_GET = "GET";
     private static final String HTTP_PUT = "PUT";
     private static final String HTTP_POST = "POST";
     private static final String HTTP_DELETE = "DELETE";
-    private static final String USER_AGENT = "Mozilla/5.0";
 
-    private String apiKey = "";
+    private String apikey = "";
 
     /**
      * Constructor for the Rachio API class to create a connection to the Rachio cloud service.
@@ -47,7 +50,7 @@ public class Http {
      * @throws Exception
      */
     public Http(final String key) throws Exception {
-        apiKey = key;
+        apikey = key;
     }
 
     /**
@@ -66,31 +69,42 @@ public class Http {
         } else {
             location = new URL(url);
         }
-        logger.trace("RachioHttp: Call Rachio cloud service (url='{}')", location.toString());
 
-        HttpURLConnection connection = (HttpURLConnection) location.openConnection();
-        connection.setRequestMethod(HTTP_GET);
-        connection.setRequestProperty("User-Agent", USER_AGENT);
-        if (apiKey != null) {
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+        HttpURLConnection request = (HttpURLConnection) location.openConnection();
+        request.setRequestMethod(HTTP_GET);
+        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
+        if (apikey != null) {
+            request.setRequestProperty("Authorization", "Bearer " + apikey);
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
+        apiCalls++;
+        logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+                location.toString());
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         StringBuilder response = new StringBuilder();
 
-        int responseCode = connection.getResponseCode();
+        int responseCode = request.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw new Exception("Error sending HTTP GET request to " + url + ". Got response code: " + responseCode);
+            throw new Exception(
+                    "RachioHttp: Error sending HTTP GET request to " + url + ". Got response code: " + responseCode);
         }
 
+        String rateLimit = request.getHeaderField(RACHIO_JSON_RATE_LIMIT);
+        String rateRemaining = request.getHeaderField(RACHIO_JSON_RATE_REMAINING);
+        String rateReset = request.getHeaderField(RACHIO_JSON_RATE_RESET);
+        if (rateLimit != null) {
+            logger.debug("RachioHttp: API rate limit={}, remaining={}, reset at {}", rateLimit, rateRemaining,
+                    rateReset);
+        }
+
+        String inputLine;
         while ((inputLine = in.readLine()) != null) {
             response.append(inputLine);
         }
 
         in.close();
 
-        logger.trace("RachioHttp: Response='{}'", response.toString());
+        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
         return response.toString();
     } // sendHttpGet
 
@@ -104,27 +118,31 @@ public class Http {
      */
     public String sendHttpPut(String url, String urlParameters) throws Exception {
         URL location = new URL(url);
-        HttpsURLConnection connection = (HttpsURLConnection) location.openConnection();
-        connection.setRequestMethod(HTTP_PUT);
-        connection.setRequestProperty("User-Agent", USER_AGENT);
-        connection.setRequestProperty("Content-Type", "application/json");
-        if (apiKey != null) {
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+        HttpsURLConnection request = (HttpsURLConnection) location.openConnection();
+        request.setRequestMethod(HTTP_PUT);
+        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
+        request.setRequestProperty("Content-Type", WEBHOOK_APPLICATION_JSON);
+        if (apikey != null) {
+            request.setRequestProperty("Authorization", "Bearer " + apikey);
         }
 
-        // Send post request
-        connection.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+        // Send PUT request
+        apiCalls++;
+        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
+                request.toString());
+        request.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(request.getOutputStream());
         wr.writeBytes(urlParameters);
         wr.flush();
         wr.close();
 
-        int responseCode = connection.getResponseCode();
+        int responseCode = request.getResponseCode();
         if ((responseCode != HttpURLConnection.HTTP_OK) && (responseCode != HttpURLConnection.HTTP_NO_CONTENT)) {
-            throw new Exception("Error sending HTTP PUT request to " + url + ". Got responce code: " + responseCode);
+            throw new Exception(
+                    "RachioHttp: Error sending HTTP PUT request to " + url + ". Got responce code: " + responseCode);
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         String inputLine;
         StringBuilder response = new StringBuilder();
 
@@ -133,6 +151,7 @@ public class Http {
         }
         in.close();
 
+        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
         return response.toString();
     } // sendHttpPUT
 
@@ -146,28 +165,31 @@ public class Http {
      */
     public String sendHttpPost(String url, String urlParameters) throws Exception {
         URL location = new URL(url);
-        HttpsURLConnection connection = (HttpsURLConnection) location.openConnection();
-        connection.setRequestMethod(HTTP_POST);
-        connection.setRequestProperty("User-Agent", USER_AGENT);
-        connection.setRequestProperty("Content-Type", "application/json");
-        if (apiKey != null) {
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+        HttpsURLConnection request = (HttpsURLConnection) location.openConnection();
+        request.setRequestMethod(HTTP_POST);
+        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
+        request.setRequestProperty("Content-Type", WEBHOOK_APPLICATION_JSON);
+        if (apikey != null) {
+            request.setRequestProperty("Authorization", "Bearer " + apikey);
         }
 
         // Send post request
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+        apiCalls++;
+        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
+                request.toString());
+        request.setDoOutput(true);
+        request.setRequestMethod("POST");
+        DataOutputStream wr = new DataOutputStream(request.getOutputStream());
         wr.writeBytes(urlParameters);
         wr.flush();
         wr.close();
 
-        int responseCode = connection.getResponseCode();
+        int responseCode = request.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new Exception("Error sending HTTP POST request to " + url + ". Got responce code: " + responseCode);
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         String inputLine;
         StringBuilder response = new StringBuilder();
 
@@ -176,6 +198,7 @@ public class Http {
         }
         in.close();
 
+        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
         return response.toString();
     } // sendHttpPost
 
@@ -197,20 +220,31 @@ public class Http {
         }
         logger.trace("RachioHttp: Call Rachio cloud service (url='{}')", location.toString());
 
-        HttpURLConnection connection = (HttpURLConnection) location.openConnection();
-        connection.setRequestMethod(HTTP_DELETE);
-        connection.setRequestProperty("User-Agent", USER_AGENT);
-        if (apiKey != null) {
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+        HttpURLConnection request = (HttpURLConnection) location.openConnection();
+        request.setRequestMethod(HTTP_DELETE);
+        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
+        if (apikey != null) {
+            request.setRequestProperty("Authorization", "Bearer " + apikey);
         }
 
-        int responseCode = connection.getResponseCode();
+        // Send DELETE request
+        apiCalls++;
+        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
+                request.toString());
+        request.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(request.getOutputStream());
+        wr.writeBytes(urlParameters);
+        wr.flush();
+        wr.close();
+
+        int responseCode = request.getResponseCode();
         if ((responseCode != HttpURLConnection.HTTP_OK) && (responseCode != HttpURLConnection.HTTP_NO_CONTENT)) {
 
-            throw new Exception("Error sending HTTP DELETE request to " + url + ". Got response code: " + responseCode);
+            throw new Exception(
+                    "RachioHttp: Error sending HTTP DELETE request to " + url + ". Got response code: " + responseCode);
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         String inputLine;
         StringBuilder response = new StringBuilder();
 
@@ -220,8 +254,8 @@ public class Http {
 
         in.close();
 
-        logger.trace("RachioHttp: Response='{}'", response.toString());
+        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
         return response.toString();
-    } // sendHttpGet
+    } // sendHttpDelete
 
 } // class

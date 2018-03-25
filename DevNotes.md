@@ -18,6 +18,33 @@ provides you information on the logging concept and configuration. You will need
 - Follow the <a href="https://docs.openhab.org/developers/development/ide.html#installation">instructions</a> to ownload and run the <a href="https://wiki.eclipse.org/Eclipse_Installer">Eclipse Installaer</a>
 - <a href="https://docs.openhab.org/developers/development/ide.html#building-running-and-debugging">Build the openHAB</a>project for the first time.
 
+### openHAB 3rd party bundles
+
+You should add another software site to the target platform, this supplies several Maven bundles not part of the standard setup, but used by several projects (e.g. JScience / javax.measure.*).
+- open project infrastructure->launch
+- double click openhab.target
+- click on Locations->Add
+- click add->software site
+- select Software Site->Next
+- click Add
+- Enter any name
+- site: http://eclipse.github.io/smarthome/third-party/target/repository
+- ok
+- open Maven osgi bundles
+- scroll down the list
+- checkmark all tec.unon.* and Units of Measurement*
+- Finish
+- Click Reload Target Platform in the upper right corner
+- Save
+- Rebuild starts
+- Open project Runtime->openhab.core.karaf
+- double click on the pom.xml
+- click on the red message “Plugin execution not covered…”
+- click “Mark goal highest…”
+
+Maybe some errors are remaining, but those are related to specific bundles and could be ignored / delete the associated projects.
+
+
 ##Some more preperations
 - fixing pom.xml
 - removing demo.*

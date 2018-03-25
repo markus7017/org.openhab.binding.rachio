@@ -20,7 +20,6 @@ import java.util.Map;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.handler.RachioZoneHandler;
-import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.util.Parse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -217,7 +216,7 @@ public class RachioZone {
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put(PROPERTY_NAME, getName());
-        properties.put(PROPERTY_ID, getId());
+        properties.put(PROPERTY_ZONE_ID, getId());
         return properties;
     }
 

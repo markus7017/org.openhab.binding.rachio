@@ -32,8 +32,8 @@ import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
+import org.openhab.binding.rachio.internal.api.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +134,8 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
             if (command instanceof OnOffType) {
                 if (command == OnOffType.ON) {
                     int runtime = zone.getStartRunTime();
-                    logger.info("RachioZone: Starting zone '{} [{}]' for {} secs", zone.getName(), zone.getZoneNumber(), runtime);
+                    logger.info("RachioZone: Starting zone '{} [{}]' for {} secs", zone.getName(), zone.getZoneNumber(),
+                            runtime);
                     if (runtime == 0) {
                         runtime = cloudHandler.getDefaultRuntime();
                         logger.debug("RachioZone: No specific runtime selected, using default ({} secs);", runtime);
@@ -175,34 +176,32 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
     public boolean webhookEvent(RachioEvent event) {
         boolean update = false;
         try {
-            String zoneName = event.eventParms.get("zoneName");
             zone.setEvent(event);
 
+            String zoneName = event.zoneName;
             if (event.type.equals("ZONE_STATUS")) {
-                Integer durationInSeconds = Integer.parseInt(event.eventParms.get("durationInSeconds"));
-                String status = event.eventParms.get("status").toUpperCase();
                 logger.info("RachioZone: Event for zone[{}] '{}': {} (status={}, duration = {}sec)",
-                        zone.getZoneNumber(), zoneName, event.summary, status, durationInSeconds);
-                if (status.equals("STARTED")) {
-                    logger.info("RachioZone: Watering started for zone[{}] '{}'.", zone.getZoneNumber(), zoneName);
-                } else if (status.equals("ZONE_STOPPED") || status.equals("ZONE_COMPLETED")) {
-                    logger.info("RachioZone: Zone[{}] '{}', stopped watering ({}).", zone.getZoneNumber(), zoneName,
-                            status);
+                        zone.getZoneNumber(), event.zoneName, event.summary, event.zoneRunStatus.state, event.duration);
+                if (event.zoneRunStatus.state.equals("STARTED")) {
+                    logger.info("RachioZone[{}]: '{}' STARTED watering ({}).", zone.getZoneNumber(), zoneName,
+                            event.timestamp);
+                    updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.ON);
+                } else if (event.subType.equals("ZONE_STOPPED") || event.subType.equals("ZONE_COMPLETED")) {
+                    logger.info("RachioZone[{}]: '{}' STOPPED watering ({}).", zone.getZoneNumber(), zoneName,
+                            event.timestamp);
                     updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.OFF);
                 }
                 update = true;
-            }
-            if (event.subType.equals("ZONE_DELTA")) {
-                String category = event.eventParms.get("type");
+            } else if (event.subType.equals("ZONE_DELTA")) {
+                String category = event.category;
                 if (category != null) {
-                    logger.info("RachioZone: DELTA Event for zone[{}] '{}': {}", zone.getZoneNumber(), zoneName,
+                    logger.info("RachioZone: DELTA Event for zone[{}] '{}': {}", zone.getZoneNumber(), event.zoneName,
                             category);
-                    for (HashMap.Entry<String, RachioEvent.RachioEventProperty> de : event.deltaProperties.entrySet()) {
-                        RachioEvent.RachioEventProperty delta = de.getValue();
-                        logger.debug("    {}: old={}, new={}", delta.propertyName, delta.oldValue, delta.newValue);
-                    }
                 }
                 update = true;
+            } else {
+                logger.debug("RachioZone: Unhanled event type '{}_{}' for zone '{}'", event.type, event.subType,
+                        zoneName);
             }
 
             if (update) {

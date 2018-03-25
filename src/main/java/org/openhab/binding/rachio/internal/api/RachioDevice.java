@@ -21,7 +21,6 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.RachioBindingConstants;
 import org.openhab.binding.rachio.handler.RachioDeviceHandler;
-import org.openhab.binding.rachio.internal.RachioEvent;
 import org.openhab.binding.rachio.internal.RachioEventString;
 import org.openhab.binding.rachio.internal.util.Parse;
 import org.slf4j.Logger;
@@ -189,12 +188,11 @@ public class RachioDevice {
      */
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put(RachioBindingConstants.PROPERTY_NAME, getName());
-        properties.put(RachioBindingConstants.PROPERTY_MODEL, getModel());
-        properties.put(RachioBindingConstants.PROPERTY_ID, getId());
         properties.put(Thing.PROPERTY_VENDOR, RachioBindingConstants.BINDING_VENDOR);
         properties.put(Thing.PROPERTY_SERIAL_NUMBER, dev_serial);
         properties.put(Thing.PROPERTY_MAC_ADDRESS, dev_mac);
+        properties.put(RachioBindingConstants.PROPERTY_NAME, getName());
+        properties.put(RachioBindingConstants.PROPERTY_MODEL, getModel());
         return properties;
     }
 
@@ -421,6 +419,16 @@ public class RachioDevice {
      */
     public HashMap<String, RachioZone> getZones() {
         return zoneList;
+    }
+
+    public RachioZone getZoneByNumber(int zoneNumber) {
+        for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
+            RachioZone zone = ze.getValue();
+            if ((zone != null) && zone.getZoneNumber() == zoneNumber) {
+                return zone;
+            }
+        }
+        return null;
     }
 
 } // class rachioDevice
