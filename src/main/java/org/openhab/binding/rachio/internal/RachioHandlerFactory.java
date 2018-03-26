@@ -120,7 +120,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     public boolean webHookEvent(RachioEvent event) {
         try {
             logger.trace("RachioEvent: Event for device '{}' received", event.deviceId);
-            event.setEventParms();// process event parameters
+            // event.setEventParms();// process event parameters
             for (HashMap.Entry<String, RachioBridge> be : bridgeList.entrySet()) {
                 RachioBridge bridge = be.getValue();
                 if (!bridge.externalId.equals(event.externalId)) {
