@@ -248,12 +248,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                 }
                 // update = true;
             } else if (event.subType.equals("DEVICE_DELTA")) {
-                String status = event.eventParms.get("status").toLowerCase();
-                logger.info("RachioDevice '{}': Device DELTA received, status={}.", dev.getName(), status);
-                for (HashMap.Entry<String, RachioEvent.RachioEventProperty> de : event.deltaProperties.entrySet()) {
-                    RachioEvent.RachioEventProperty delta = de.getValue();
-                    logger.debug("    {}: old={}, new={}", delta.propertyName, delta.oldValue, delta.newValue);
-                }
+                logger.info("RachioDevice '{}': Device DELTA received, status={}.", dev.getName(), event.eventType);
                 // update = true;
             } else if (etype.equals("SCHEDULE_STATUS")) {
                 logger.info("RachioDevice '{}': schedule'{}' {} (type={}, estimatedDuration = {}sec - {})",

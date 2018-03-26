@@ -187,8 +187,8 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
                             event.timestamp);
                     updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.ON);
                 } else if (event.subType.equals("ZONE_STOPPED") || event.subType.equals("ZONE_COMPLETED")) {
-                    logger.info("RachioZone[{}]: '{}' STOPPED watering ({}).", zone.getZoneNumber(), zoneName,
-                            event.timestamp);
+                    logger.info("RachioZone[{}]: '{}' STOPPED watering, flow={} ({}).", zone.getZoneNumber(), zoneName,
+                            event.flowVolume, event.timestamp);
                     updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.OFF);
                 }
                 update = true;

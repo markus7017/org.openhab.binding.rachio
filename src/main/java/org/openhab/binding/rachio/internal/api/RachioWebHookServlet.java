@@ -89,7 +89,7 @@ public class RachioWebHookServlet extends HttpServlet {
                 ipAddress = request.getRemoteAddr();
             }
             String path = request.getRequestURI();
-            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
+            logger.debug("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getProtocol());
             if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
                 logger.error("RachioWebHook: Invalid request received - path = {}", path);

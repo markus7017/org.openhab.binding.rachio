@@ -276,6 +276,7 @@ public class RachioApi {
             JsonElement jelement = jsonParser.parse(jsonWebHooks);
             JsonArray jaWebHooks = jelement.getAsJsonArray();
             Gson gson = new Gson();
+
             for (int i = 0; i < jaWebHooks.size(); i++) {
                 JsonElement je = jaWebHooks.get(i);
                 String json = je.toString();
@@ -288,6 +289,7 @@ public class RachioApi {
                 }
             }
         } catch (Exception e) {
+            logger.debug("RachioApi: Unable to delete WebHook: {}", e.getMessage());
         }
 
         try {
@@ -297,7 +299,7 @@ public class RachioApi {
             // "url":"https://www.mydomain.com/another_webhook",
             // "eventTypes":[{"id":"1"},{"id":"2"}]
             // }
-            logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
+            logger.debug("RachioApi: Register WebHook, callback for device '{}', url = '{}'", deviceId, callbackUrl);
             String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
                     + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
                     + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""

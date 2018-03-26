@@ -77,6 +77,7 @@ public class Http {
             request.setRequestProperty("Authorization", "Bearer " + apikey);
         }
 
+        // Send GET
         apiCalls++;
         logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
                 location.toString());
@@ -156,6 +157,53 @@ public class Http {
     } // sendHttpPUT
 
     /**
+     * Given a URL and a set parameters, send a HTTP DELETE request to the URL location created by the URL and
+     * parameters.
+     *
+     * @param url The URL to send a DELETE request to.
+     * @param urlParameters List of parameters to use in the URL for the DELETE request. Null if no parameters.
+     * @return String contents of the response for the DELETE request.
+     * @throws Exception
+     */
+    public String sendHttpDelete(String url, String urlParameters) throws Exception {
+        URL location = null;
+
+        if (urlParameters != null) {
+            location = new URL(url + "?" + urlParameters);
+        } else {
+            location = new URL(url);
+        }
+
+        HttpURLConnection request = (HttpURLConnection) location.openConnection();
+        request.setRequestMethod(HTTP_DELETE);
+        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
+        if (apikey != null) {
+            request.setRequestProperty("Authorization", "Bearer " + apikey);
+        }
+
+        // Send DELETE request
+        apiCalls++;
+        logger.debug("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+                location.toString());
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        int responseCode = request.getResponseCode();
+        if ((responseCode != HttpURLConnection.HTTP_OK) && (responseCode != HttpURLConnection.HTTP_NO_CONTENT)) {
+            throw new Exception("RachioHttp: Error sending HTTP DELETE returned code " + responseCode + ", url=" + url);
+        }
+
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+
+        in.close();
+
+        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
+        return response.toString();
+    } // sendHttpDelete
+
+    /**
      * Given a URL and a set parameters, send a HTTP POST request to the URL location created by the URL and parameters.
      *
      * @param url The URL to send a POST request to.
@@ -201,61 +249,5 @@ public class Http {
         logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
         return response.toString();
     } // sendHttpPost
-
-    /**
-     * Given a URL and a set parameters, send a HTTP GET request to the URL location created by the URL and parameters.
-     *
-     * @param url The URL to send a GET request to.
-     * @param urlParameters List of parameters to use in the URL for the GET request. Null if no parameters.
-     * @return String contents of the response for the GET request.
-     * @throws Exception
-     */
-    public String sendHttpDelete(String url, String urlParameters) throws Exception {
-        URL location = null;
-
-        if (urlParameters != null) {
-            location = new URL(url + "?" + urlParameters);
-        } else {
-            location = new URL(url);
-        }
-        logger.trace("RachioHttp: Call Rachio cloud service (url='{}')", location.toString());
-
-        HttpURLConnection request = (HttpURLConnection) location.openConnection();
-        request.setRequestMethod(HTTP_DELETE);
-        request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
-        if (apikey != null) {
-            request.setRequestProperty("Authorization", "Bearer " + apikey);
-        }
-
-        // Send DELETE request
-        apiCalls++;
-        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
-                request.toString());
-        request.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(request.getOutputStream());
-        wr.writeBytes(urlParameters);
-        wr.flush();
-        wr.close();
-
-        int responseCode = request.getResponseCode();
-        if ((responseCode != HttpURLConnection.HTTP_OK) && (responseCode != HttpURLConnection.HTTP_NO_CONTENT)) {
-
-            throw new Exception(
-                    "RachioHttp: Error sending HTTP DELETE request to " + url + ". Got response code: " + responseCode);
-        }
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
-        String inputLine;
-        StringBuilder response = new StringBuilder();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-
-        in.close();
-
-        logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, response.toString());
-        return response.toString();
-    } // sendHttpDelete
 
 } // class
