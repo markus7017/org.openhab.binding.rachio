@@ -10,13 +10,14 @@
  */
 package org.openhab.binding.rachio.internal.api;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.API_RATE_TRESHHOLD;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.internal.util.Http;
 import org.openhab.binding.rachio.internal.util.Parse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,15 +68,20 @@ public class RachioApi {
      * id:12, type=ZONE_DELTA
      * id:14, type=DELTA
      */
-    public final String WHE_DEVICE_STATUS = "5"; // "Device status event has occurred"
-    public final String WHE_RAIN_DELAY = "6"; // "A rain delay event has occurred"
-    public final String WEATHER_INTELLIGENCE = "7"; // A weather intelligence event has has occurred
-    public final String WHE_WATER_BUDGET = "8"; // A water budget event has occurred
-    public final String WHE_SCHEDULE_STATUS = "9";
-    public final String WHE_ZONE_STATUS = "10";
-    public final String WHE_RAIN_SENSOR_DETECTION = "11"; // physical rain sensor event has coccurred
-    public final String WHE_ZONE_DELTA = "12"; // A physical rain sensor event has occurred
-    public final String WHE_DELTA = "14"; // "An entity has been inserted, updated, or deleted"
+    private static String WHE_DEVICE_STATUS = "5"; // "Device status event has occurred"
+    private static String WHE_RAIN_DELAY = "6"; // "A rain delay event has occurred"
+    private static String WEATHER_INTELLIGENCE = "7"; // A weather intelligence event has has occurred
+    private static String WHE_WATER_BUDGET = "8"; // A water budget event has occurred
+    private static String WHE_SCHEDULE_STATUS = "9";
+    private static String WHE_ZONE_STATUS = "10";
+    private static String WHE_RAIN_SENSOR_DETECTION = "11"; // physical rain sensor event has coccurred
+    private static String WHE_ZONE_DELTA = "12"; // A physical rain sensor event has occurred
+    private static String WHE_DELTA = "14"; // "An entity has been inserted, updated, or deleted"
+
+    private static final String JSON_OPTION_ID = "id";
+    private static final String JSON_OPTION_PERSON_USERNAME = "username";
+    private static final String JSON_OPTION_PERSON_FULLNAME = "fullName";
+    private static final String JSON_OPTION_PERSON_EMAIL = "email";
 
     public class RachioApiWebHookEntry {
         public long createDate = -1;
@@ -90,30 +96,20 @@ public class RachioApi {
         }
     }
 
-    private static final String JSON_OPTION_ID = "id";
-    private static final String JSON_OPTION_PERSON_USERNAME = "username";
-    private static final String JSON_OPTION_PERSON_FULLNAME = "fullName";
-    private static final String JSON_OPTION_PERSON_EMAIL = "email";
-
     protected String apikey = "";
     protected String personId = "";
     protected String userName = "";
     protected String fullName = "";
     protected String email = "";
 
-    public boolean masterCopy = false;
     private HashMap<String, RachioDevice> deviceList = new HashMap<String, RachioDevice>();
-    protected Http api = null;
+    protected RachioHttp api = null;
 
-    public void setMaster() {
-        masterCopy = true;
-    }
-
-    public Boolean initialize(String apikey, ThingUID bridgeUID) {
+    public Boolean initialize(String apikey, String personId, ThingUID bridgeUID) {
         try {
             this.apikey = apikey;
-            api = new Http(this.apikey);
-            if (initializePersonId() && initializeDevices(bridgeUID) && initializeZones() && initializeWebHook()) {
+            api = new RachioHttp(this.apikey);
+            if (initializePersonId(personId) && initializeDevices(bridgeUID) && initializeZones()) {
                 logger.trace("Rachio API initialized");
                 return true;
             }
@@ -163,22 +159,33 @@ public class RachioApi {
         return null;
     } // getDevByUID()
 
-    private Boolean initializePersonId() throws Exception {
+    private Boolean initializePersonId(String personId) throws Exception {
         if (api == null) {
             logger.debug("RachioApi.initializePersonId: API not initialized!");
             return false;
         }
+
+        if ((personId != null) && !personId.equals("") && this.personId.equals("")) {
+            this.personId = personId;
+            logger.debug("Using cached personId '{}'", this.personId);
+            return true;
+        }
+
         String returnContent = "";
         try {
             returnContent = api.sendHttpGet(APIURL_BASE + APIURL_GET_PERSON, null);
-            personId = Parse.jsonString(returnContent, JSON_OPTION_ID, "");
-            logger.debug("Using personId '{}'", personId);
+            this.personId = Parse.jsonString(returnContent, JSON_OPTION_ID, "");
+            logger.trace("RachioApi: Using personId '{}'", this.personId);
             return true;
         } catch (Exception e) {
             logger.error("RachioApo: Unable to get personId: {}, data='{}'", e.getMessage(), returnContent);
         }
         return false;
     } // initializePersonId()
+
+    public String getPersonId() {
+        return personId;
+    }
 
     public String getUserInfo() {
         String info = "";
@@ -266,6 +273,11 @@ public class RachioApi {
         return false;
     } // getDeviceInfo
 
+    public boolean checkRateLimit(int desiredLimit) {
+        int limit = desiredLimit > 0 ? desiredLimit : API_RATE_TRESHHOLD;
+        return api.checkRateLimit(limit);
+    }
+
     public boolean registerWebHook(String deviceId, String callbackUrl, String externalId, Boolean clearAllCallbacks) {
         // first check/delete existing webhooks
         try {
@@ -275,8 +287,8 @@ public class RachioApi {
             JsonParser jsonParser = new JsonParser();
             JsonElement jelement = jsonParser.parse(jsonWebHooks);
             JsonArray jaWebHooks = jelement.getAsJsonArray();
-            Gson gson = new Gson();
 
+            Gson gson = new Gson();
             for (int i = 0; i < jaWebHooks.size(); i++) {
                 JsonElement je = jaWebHooks.get(i);
                 String json = je.toString();
@@ -347,18 +359,6 @@ public class RachioApi {
     public Boolean initializeZones() {
         return true;
     } // initializeZones()
-
-    public boolean initializeWebHook() {
-        try {
-            // 1st check the list of available webhook events
-            String jsonEventlist = api.sendHttpGet(APIURL_BASE + APIURL_NOT_GET_LIST, null);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi.registerWebHook: Exception: {}", e.getMessage());
-        }
-        logger.debug("RachioApi.registerWebHook: Initialization failed");
-        return false;
-    }
 
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();

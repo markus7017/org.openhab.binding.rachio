@@ -11,11 +11,6 @@
 
 package org.openhab.binding.rachio.internal;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-
 import org.openhab.binding.rachio.internal.api.RachioEvent;
 
 import com.google.gson.Gson;
@@ -27,7 +22,7 @@ import com.google.gson.Gson;
  */
 @SuppressWarnings("unused")
 public class RachioEventString {
-    private final String eventDate;
+    private final String timestamp;
     private final String summary;
     private final String topic;
     private final String type;
@@ -36,16 +31,16 @@ public class RachioEventString {
     private Gson gson = new Gson();
 
     public RachioEventString(RachioEvent event) {
-        LocalDateTime dateTime = LocalDateTime.ofEpochSecond(event.eventDate, 0, ZoneOffset.UTC);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        eventDate = dateTime.format(formatter);
-        summary = event.summary;
-        topic = event.topic;
-        type = event.type;
-        subType = event.subType;
+        this.timestamp = event.timestamp;
+        this.summary = event.summary;
+        this.topic = event.topic;
+        this.type = event.type;
+        this.subType = event.subType;
     }
 
     public String toJson() {
-        return gson.toJson(this);
+        String json = gson.toJson(this);
+        String str = (json.indexOf("\"gson\"") > -1) ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
+        return str;
     }
 }

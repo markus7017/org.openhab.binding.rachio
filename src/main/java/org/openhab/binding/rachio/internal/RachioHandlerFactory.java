@@ -51,7 +51,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
 
     public class RachioBridge {
         RachioBridgeHandler cloudHandler;
-        String externalId;
         ThingUID uid;
     }
 
@@ -123,8 +122,10 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             // event.setEventParms();// process event parameters
             for (HashMap.Entry<String, RachioBridge> be : bridgeList.entrySet()) {
                 RachioBridge bridge = be.getValue();
-                if (!bridge.externalId.equals(event.externalId)) {
-                    logger.info("RachioEvent: Check for externalId failed: '{}'", event.externalId);
+                String externalId = bridge.cloudHandler.getExternalId();
+                if (!externalId.equals(event.externalId)) {
+                    logger.info("RachioEvent: Check for externalId failed: '{}' vs. '{}'", event.externalId,
+                            externalId);
                     return false;
                 }
                 return bridge.cloudHandler.webHookEvent(event);
@@ -149,7 +150,11 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             RachioBridge bridge = be.getValue();
             String ipFilter = bridge.cloudHandler.getIpFilter();
             if (!ipFilter.equals("")) {
-                ipList = ipList + ";" + ipFilter;
+                if (ipList.equals("")) {
+                    ipList = ipFilter;
+                } else {
+                    ipList = ipList + ";" + ipFilter;
+                }
             }
         }
         return ipList;
@@ -161,7 +166,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             bridge.uid = bridgeThing.getUID();
             bridge.cloudHandler = new RachioBridgeHandler(bridgeThing);
             bridge.cloudHandler.setConfiguration(bindingConfig);
-            bridge.externalId = bridge.cloudHandler.getExternalId();
             bridgeList.put(bridge.uid.toString(), bridge);
 
             registerDiscoveryService(bridge.cloudHandler);

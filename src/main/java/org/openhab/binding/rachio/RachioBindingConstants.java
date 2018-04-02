@@ -102,4 +102,7 @@ public class RachioBindingConstants {
     public static final String RACHIO_JSON_RATE_LIMIT = "X-RateLimit-Limit";
     public static final String RACHIO_JSON_RATE_REMAINING = "X-RateLimit-Remaining";
     public static final String RACHIO_JSON_RATE_RESET = "X-RateLimit-Reset";
+
+    public static int API_RATE_TRESHHOLD = 200; // if we have than those remaining api calls, polling stops
+    public static int API_SKIP_RATE = 10; // number of calls to skip if remaining calls are < treshhold
 }

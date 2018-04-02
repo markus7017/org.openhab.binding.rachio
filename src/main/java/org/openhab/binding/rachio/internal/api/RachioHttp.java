@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.openhab.binding.rachio.internal.util;
+package org.openhab.binding.rachio.internal.api;
 
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
@@ -25,14 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link Http} class contains static methods for communicating HTTP GET
+ * The {@link RachioHttp} class contains static methods for communicating HTTP GET
  * and HTTP POST requests.
  *
  * @author Chris Graham - Initial contribution
  * @author Markus Michels - re-used for the Rachio binding
  */
-public class Http {
-    private final Logger logger = LoggerFactory.getLogger(Http.class);
+public class RachioHttp {
+    private final Logger logger = LoggerFactory.getLogger(RachioHttp.class);
 
     private int apiCalls = 0;
 
@@ -42,6 +42,9 @@ public class Http {
     private static final String HTTP_DELETE = "DELETE";
 
     private String apikey = "";
+    private static Integer rateLimit = 0;
+    private static Integer rateRemaining = 0;
+    private static String rateResetTime = "";
 
     /**
      * Constructor for the Rachio API class to create a connection to the Rachio cloud service.
@@ -49,7 +52,7 @@ public class Http {
      * @param key Rachio API Access token (see Web UI)
      * @throws Exception
      */
-    public Http(final String key) throws Exception {
+    public RachioHttp(final String key) throws Exception {
         apikey = key;
     }
 
@@ -79,25 +82,18 @@ public class Http {
 
         // Send GET
         apiCalls++;
-        logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+        logger.debug("RachioHttp: Call #{} to Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
                 location.toString());
-        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
-        StringBuilder response = new StringBuilder();
 
         int responseCode = request.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new Exception(
                     "RachioHttp: Error sending HTTP GET request to " + url + ". Got response code: " + responseCode);
         }
+        saveRateLimit(request);
 
-        String rateLimit = request.getHeaderField(RACHIO_JSON_RATE_LIMIT);
-        String rateRemaining = request.getHeaderField(RACHIO_JSON_RATE_REMAINING);
-        String rateReset = request.getHeaderField(RACHIO_JSON_RATE_RESET);
-        if (rateLimit != null) {
-            logger.debug("RachioHttp: API rate limit={}, remaining={}, reset at {}", rateLimit, rateRemaining,
-                    rateReset);
-        }
-
+        BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
+        StringBuilder response = new StringBuilder();
         String inputLine;
         while ((inputLine = in.readLine()) != null) {
             response.append(inputLine);
@@ -129,8 +125,8 @@ public class Http {
 
         // Send PUT request
         apiCalls++;
-        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
-                request.toString());
+        logger.debug("RachioHttp: Call #{} to Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+                location.toString());
         request.setDoOutput(true);
         DataOutputStream wr = new DataOutputStream(request.getOutputStream());
         wr.writeBytes(urlParameters);
@@ -142,6 +138,7 @@ public class Http {
             throw new Exception(
                     "RachioHttp: Error sending HTTP PUT request to " + url + ". Got responce code: " + responseCode);
         }
+        saveRateLimit(request);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         String inputLine;
@@ -183,7 +180,7 @@ public class Http {
 
         // Send DELETE request
         apiCalls++;
-        logger.debug("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+        logger.debug("RachioHttp: Call #{} to Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
                 location.toString());
         BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         StringBuilder response = new StringBuilder();
@@ -191,6 +188,7 @@ public class Http {
         if ((responseCode != HttpURLConnection.HTTP_OK) && (responseCode != HttpURLConnection.HTTP_NO_CONTENT)) {
             throw new Exception("RachioHttp: Error sending HTTP DELETE returned code " + responseCode + ", url=" + url);
         }
+        saveRateLimit(request);
 
         String inputLine;
         while ((inputLine = in.readLine()) != null) {
@@ -223,8 +221,8 @@ public class Http {
 
         // Send post request
         apiCalls++;
-        logger.trace("RachioHttp[Call #{}]: {} Call Rachio cloud service: '{}')", apiCalls, request.getRequestMethod(),
-                request.toString());
+        logger.debug("RachioHttp: Call #{} to Rachio cloud service: {} '{}')", apiCalls, request.getRequestMethod(),
+                location.toString());
         request.setDoOutput(true);
         request.setRequestMethod("POST");
         DataOutputStream wr = new DataOutputStream(request.getOutputStream());
@@ -236,6 +234,7 @@ public class Http {
         if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new Exception("Error sending HTTP POST request to " + url + ". Got responce code: " + responseCode);
         }
+        saveRateLimit(request);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
         String inputLine;
@@ -250,4 +249,34 @@ public class Http {
         return response.toString();
     } // sendHttpPost
 
+    private boolean saveRateLimit(HttpURLConnection request) {
+        String strLimit = request.getHeaderField(RACHIO_JSON_RATE_LIMIT);
+        String strRemaining = request.getHeaderField(RACHIO_JSON_RATE_REMAINING);
+        String strResetTime = request.getHeaderField(RACHIO_JSON_RATE_RESET);
+        if (strLimit != null) {
+            rateLimit = Integer.parseInt(strLimit);
+            if (strRemaining != null) {
+                rateRemaining = Integer.parseInt(strRemaining);
+            }
+            if (strResetTime != null) {
+                rateResetTime = strResetTime;
+            }
+        }
+        if (rateLimit != 0) {
+            logger.debug("RachioApi: Rate Limit={}, remaining API calls={}, reset at {}", rateLimit, rateRemaining,
+                    rateResetTime);
+            apiCalls = rateLimit - rateRemaining;
+        }
+        return true;
+    } // saveRateLimit
+
+    public boolean checkRateLimit(int treshhold) {
+        if ((rateLimit != 0) && (rateRemaining < treshhold)) {
+            logger.info(
+                    "RachioApi: Remaining number of api calls is below treshhold (limit={}, calls={}, remaining={}, reset at {}",
+                    rateLimit, apiCalls, rateRemaining, rateResetTime);
+            return false;
+        }
+        return true;
+    }
 } // class

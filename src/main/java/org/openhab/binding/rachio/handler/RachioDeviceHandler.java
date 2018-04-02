@@ -101,7 +101,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
             logger.debug("Called with a null channel id - ignoring");
             return;
         }
-        logger.debug("RachioDevice.handleCommand {} for {}", command.toString(), channel);
+        logger.debug("RachioDevice.handleCommand {} for channel '{}'", command.toString(), channel);
 
         if ((cloudHandler == null) || (dev == null)) {
             logger.debug("RachioDevice: Cloud handler or device not initialized!");
@@ -109,8 +109,10 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         }
 
         if (command == RefreshType.REFRESH) {
-            // cloudHandler.refreshDeviceStatus();
-            postChannelData();
+            if (refreshChannel(channel)) {
+                logger.debug("RachioDevice: Channel '{}' was refreshed", channel);
+            }
+
         } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_ACTIVE)) {
             if (command instanceof OnOffType) {
                 if (command == OnOffType.OFF) {
@@ -198,6 +200,16 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
 
         updateState(channelName, newValue);
         return true;
+    }
+
+    @SuppressWarnings({ "null", "unused" })
+    private boolean refreshChannel(String channelName) {
+        State currentValue = channelData.get(channelName);
+        if (currentValue != null) {
+            updateState(channelName, currentValue);
+            return true;
+        }
+        return false;
     }
 
     @SuppressWarnings("null")

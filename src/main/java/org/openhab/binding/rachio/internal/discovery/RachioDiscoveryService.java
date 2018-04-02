@@ -102,7 +102,7 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
                     return;
                 }
                 bridgeUID = new ThingUID(BINDING_ID, "cloud", apikey);
-                rapi.initialize(apikey, bridgeUID);
+                rapi.initialize(apikey, null, bridgeUID);
                 deviceList = rapi.getDevices();
                 if (deviceList != null) {
                     @SuppressWarnings({ "unchecked", "rawtypes" })
