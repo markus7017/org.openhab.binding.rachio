@@ -10,6 +10,8 @@
  */
 package org.openhab.binding.rachio.handler;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.login.LoginException;
 
-import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.config.core.status.ConfigStatusMessage;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -54,7 +55,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     private final RachioApi rachioApi;
     private final RachioNetwork network;
     private ScheduledFuture<?> pollingJob;
-    private boolean jobPending = false;
+    private int skipCalls = 0;
 
     /**
      * Thing Handler for the Bridge thing. Handles the cloud connection and links devices+zones to a bridge.
@@ -74,7 +75,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     public RachioBridgeHandler(final Bridge bridge) {
         super(bridge);
         rachioApi = new RachioApi();
-        rachioApi.setMaster();
         network = new RachioNetwork();
     }
 
@@ -94,6 +94,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
 
             logger.debug("RachioBridgeHandler: Connecting to Rachio cloud");
             createCloudConnection(rachioApi);
+            thingConfig.setPersonId(rachioApi.getPersonId());
             updateProperties();
 
             // Pass BridgeUID to device, RachioDeviceHandler will fill DeviceUID
@@ -116,7 +117,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             }
 
             // Informational: Display a info if ipFilter will be applied
-            String ipFilter = getIpFilter();
+            String ipFilter = thingConfig.ipFilter;
             if (!ipFilter.equals("")) {
                 logger.info("RachioBridge: The following IP filter will be applied: '{}'", ipFilter);
             }
@@ -162,19 +163,25 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      */
     public void refreshDeviceStatus() {
         try {
-            synchronized (this) {
-                if (jobPending) {
-                    logger.debug("RachioBridge: Already checking");
-                    return;
-                }
-                jobPending = true;
-            }
-
             logger.trace("RachioBridgeHandler: refreshDeviceStatus");
             HashMap<String, RachioDevice> deviceList = getDevices();
             if (deviceList == null) {
                 logger.debug("RachioBridgeHandler: Cloud access not initialized yet!");
                 return;
+            }
+
+            // Use RachioApi to get device/zone list+status and compare to the current status
+            // exception if cloud connect fails
+            // We need to block further polling if the limit for API calls per day will be exceeded (-safety)
+            if (rachioApi.checkRateLimit(API_RATE_TRESHHOLD)) {
+                skipCalls = 0;
+            } else {
+                if ((++skipCalls % API_SKIP_RATE) != 0) {
+                    logger.info(
+                            "RachioBridge: Treshhold for API calls may exceed Rachio Cloud rate limit, status update skipped ({}/{})",
+                            skipCalls % API_SKIP_RATE, API_SKIP_RATE);
+                    return;
+                }
             }
 
             RachioApi checkApi = new RachioApi();
@@ -234,8 +241,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             logger.error("RachioBridge: Unexpected error while checking device status: {}", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                     "RachioBridge: Unable to refresh device status: " + e.getMessage());
-        } finally {
-            jobPending = false;
         }
     } // refreshDeviceStatus()
 
@@ -246,12 +251,11 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      */
     private void createCloudConnection(RachioApi api) throws Exception {
         if (thingConfig.apikey.isEmpty()) {
-            throw new Exception(
-                    "RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set, check services/rachio.cfg!");
+            throw new Exception("RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set!");
         }
 
-        if (!api.initialize(thingConfig.apikey, this.getThing().getUID())) {
-            throw new Exception("Unable to connect to Rachio Cloud!");
+        if (!api.initialize(thingConfig.apikey, thingConfig.personId, this.getThing().getUID())) {
+            throw new Exception("RachioBridge: Unable to connect to Rachio Cloud!");
         }
     } // createCloudConnection()
 
@@ -359,39 +363,15 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return the polling interval in seconds
      */
     public String getApiKey() {
-        String apikey = getConfigAs(RachioConfiguration.class).apikey;
-        if (!apikey.equals("")) {
-            return apikey;
-        }
-        Configuration config = getThing().getConfiguration();
-        return (String) config.get(RachioConfiguration.PARAM_APIKEY);
-    }
-
-    /**
-     * Retrieve the polling interval from Thing config
-     *
-     * @return the polling interval in seconds
-     */
-    public int getPollingInterval() {
-        return getConfigAs(RachioConfiguration.class).pollingInterval;
-    }
-
-    /**
-     * Retrieve the callback URL for Rachio Cloud Eevents
-     *
-     * @return callbackUrl
-     */
-    public String getCallbackUrl() {
-        return getConfigAs(RachioConfiguration.class).callbackUrl;
-    }
-
-    /**
-     * Retrieve the clearAllCallbacks flag from thing config
-     *
-     * @return true=clear all callbacks, false=clear only the current one (avoid multiple instances)
-     */
-    public Boolean getClearAllCallbacks() {
-        return getConfigAs(RachioConfiguration.class).clearAllCallbacks;
+        return thingConfig.apikey;
+        /*
+         * String apikey = getConfigAs(RachioConfiguration.class).apikey;
+         * if (!apikey.equals("")) {
+         * return apikey;
+         * }
+         * Configuration config = getThing().getConfiguration();
+         * return (String) config.get(RachioConfiguration.PARAM_APIKEY);
+         */
     }
 
     /**
@@ -457,11 +437,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      */
     public boolean registerWebHook(String deviceId) {
         try {
-            if (getCallbackUrl().equals("")) {
+            if (thingConfig.callbackUrl.equals("")) {
                 logger.trace("RachioApi: No callbackUrl configured.");
                 return true;
             } else {
-                return rachioApi.registerWebHook(deviceId, getCallbackUrl(), getExternalId(), getClearAllCallbacks());
+                return rachioApi.registerWebHook(deviceId, thingConfig.callbackUrl, getExternalId(),
+                        thingConfig.clearAllCallbacks);
             }
         } catch (Exception e) {
             logger.error("RachioBridgeHandler.registerWebHook({}) failed: {}", deviceId, e.getMessage());
@@ -498,8 +479,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      */
     private synchronized void updateListenerManagement() {
         if (!rachioStatusListeners.isEmpty() && (pollingJob == null || pollingJob.isCancelled())) {
-            pollingJob = scheduler.scheduleWithFixedDelay(pollingRunnable, getPollingInterval(), getPollingInterval(),
-                    TimeUnit.SECONDS);
+            pollingJob = scheduler.scheduleWithFixedDelay(pollingRunnable, thingConfig.pollingInterval,
+                    thingConfig.pollingInterval, TimeUnit.SECONDS);
         } else if (rachioStatusListeners.isEmpty() && pollingJob != null && !pollingJob.isCancelled()) {
             pollingJob.cancel(true);
             pollingJob = null;

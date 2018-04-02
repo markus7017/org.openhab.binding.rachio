@@ -79,17 +79,12 @@ public class RachioWebHookServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
         String data = inputStreamToString(request);
         try {
-            // Fix malformed API v3 Event JSON
-            data = data.replace("\"{", "{");
-            data = data.replace("}\"", "}");
-            data = data.replace("\\", "");
-
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
             }
             String path = request.getRequestURI();
-            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
+            logger.debug("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getProtocol());
             if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
                 logger.error("RachioWebHook: Invalid request received - path = {}", path);
@@ -109,11 +104,16 @@ public class RachioWebHookServlet extends HttpServlet {
             }
 
             if (data != null) {
+                // Fix malformed API v3 Event JSON
+                data = data.replace("\"{", "{");
+                data = data.replace("}\"", "}");
+                data = data.replace("\\", "");
+
                 logger.trace("RachioWebHook: Data='{}'", data);
                 RachioEvent event = gson.fromJson(data, RachioEvent.class);
                 if ((event != null) && (rachioHandlerFactory != null)) {
-                    logger.trace("RachioEvent {}.{} for device '{}': {}", event.category, event.type, event.deviceId,
-                            event.summary);
+                    logger.trace("RachioEvent {}.{} for device '{}': {} (externalId='{}')", event.category, event.type,
+                            event.deviceId, event.summary, event.externalId);
 
                     event.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
                             request.getHeader(RACHIO_JSON_RATE_REMAINING), request.getHeader(RACHIO_JSON_RATE_RESET));

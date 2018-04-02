@@ -101,7 +101,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
             logger.debug("Called with a null channel id - ignoring");
             return;
         }
-        logger.debug("RachioDevice.handleCommand {} for {}", command.toString(), channel);
+        logger.debug("RachioDevice.handleCommand {} for channel '{}'", command.toString(), channel);
 
         if ((cloudHandler == null) || (dev == null)) {
             logger.debug("RachioDevice: Cloud handler or device not initialized!");
@@ -109,8 +109,10 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         }
 
         if (command == RefreshType.REFRESH) {
-            // cloudHandler.refreshDeviceStatus();
-            postChannelData();
+            if (refreshChannel(channel)) {
+                logger.debug("RachioDevice: Channel '{}' was refreshed", channel);
+            }
+
         } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_ACTIVE)) {
             if (command instanceof OnOffType) {
                 if (command == OnOffType.OFF) {
@@ -200,6 +202,16 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         return true;
     }
 
+    @SuppressWarnings({ "null", "unused" })
+    private boolean refreshChannel(String channelName) {
+        State currentValue = channelData.get(channelName);
+        if (currentValue != null) {
+            updateState(channelName, currentValue);
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings("null")
     @Override
     public boolean onThingStateChangedl(@Nullable RachioDevice updatedDev, @Nullable RachioZone updatedZone) {
@@ -248,12 +260,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                 }
                 // update = true;
             } else if (event.subType.equals("DEVICE_DELTA")) {
-                String status = event.eventParms.get("status").toLowerCase();
-                logger.info("RachioDevice '{}': Device DELTA received, status={}.", dev.getName(), status);
-                for (HashMap.Entry<String, RachioEvent.RachioEventProperty> de : event.deltaProperties.entrySet()) {
-                    RachioEvent.RachioEventProperty delta = de.getValue();
-                    logger.debug("    {}: old={}, new={}", delta.propertyName, delta.oldValue, delta.newValue);
-                }
+                logger.info("RachioDevice '{}': Device DELTA received, status={}.", dev.getName(), event.eventType);
                 // update = true;
             } else if (etype.equals("SCHEDULE_STATUS")) {
                 logger.info("RachioDevice '{}': schedule'{}' {} (type={}, estimatedDuration = {}sec - {})",
@@ -261,7 +268,8 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                         event.summary);
                 update = true;
             } else {
-                logger.debug("RachioDevice '{}': Unhandled event '{}_{}' ({})", etype, event.subType);
+                logger.debug("RachioDevice '{}': Unhandled event '{}_{}' ({})", event.deviceId, etype, event.subType,
+                        event.summary);
             }
 
             if (update) {

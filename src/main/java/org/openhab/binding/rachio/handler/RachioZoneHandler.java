@@ -185,13 +185,15 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
                 if (event.zoneRunStatus.state.equals("STARTED")) {
                     logger.info("RachioZone[{}]: '{}' STARTED watering ({}).", zone.getZoneNumber(), zoneName,
                             event.timestamp);
+                    updateState(RachioBindingConstants.CHANNEL_ZONE_RUN_TIME, new DecimalType(event.duration));
                     updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.ON);
                 } else if (event.subType.equals("ZONE_STOPPED") || event.subType.equals("ZONE_COMPLETED")) {
-                    logger.info("RachioZone[{}]: '{}' STOPPED watering ({}).", zone.getZoneNumber(), zoneName,
-                            event.timestamp);
+                    logger.info("RachioZone[{}]: '{}' STOPPED watering, flow={} ({}).", zone.getZoneNumber(), zoneName,
+                            event.flowVolume, event.timestamp);
+                    updateState(RachioBindingConstants.CHANNEL_ZONE_RUN_TIME, new DecimalType(event.duration));
                     updateState(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.OFF);
                 }
-                update = true;
+                // update = true;
             } else if (event.subType.equals("ZONE_DELTA")) {
                 String category = event.category;
                 if (category != null) {
@@ -278,9 +280,9 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
     @SuppressWarnings("null")
     private void updateProperties() {
         if ((cloudHandler != null) && (zone != null)) {
-            logger.debug("Updating Rachio zone properties");
             Map<String, String> prop = zone.fillProperties();
             if (prop != null) {
+                logger.debug("RachioZone: Updating properties");
                 updateProperties(prop);
             } else {
                 logger.debug("RachioZone: Unable to update properties for Thing {}!", dev.getUID().getAsString());
