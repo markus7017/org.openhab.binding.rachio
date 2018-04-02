@@ -15,7 +15,6 @@ package org.openhab.binding.rachio.internal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openhab.binding.rachio.handler.RachioBridgeHandler;
 import org.openhab.binding.rachio.handler.RachioDeviceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels (markus7017)
  */
 public class RachioConfiguration {
-    private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(RachioConfiguration.class);
 
     public static final String PARAM_APIKEY = "apikey";
     public static final String PARAM_PERSONID = "personId";
@@ -81,7 +80,12 @@ public class RachioConfiguration {
             }
         }
 
-        logger.debug(flBinding ? "Rachio Binding Configuration:" : "Rachio Thing Configuration:");
+        if (flBinding) {
+            logger.debug("Rachio Binding Configuration:");
+        } else {
+            logger.debug("Rachio Thing Configuration:");
+
+        }
         logger.debug(
                 "  apikey='{}', personId='{}', pollingInterval={}s, defaultRuntime={}s, callbackUrl='{}', clearAllCallbacks={}",
                 apikey, personId, pollingInterval, defaultRuntime, callbackUrl, clearAllCallbacks);

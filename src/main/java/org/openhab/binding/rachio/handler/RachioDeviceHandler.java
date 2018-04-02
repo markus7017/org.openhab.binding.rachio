@@ -268,7 +268,8 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                         event.summary);
                 update = true;
             } else {
-                logger.debug("RachioDevice '{}': Unhandled event '{}_{}' ({})", etype, event.subType);
+                logger.debug("RachioDevice '{}': Unhandled event '{}_{}' ({})", event.deviceId, etype, event.subType,
+                        event.summary);
             }
 
             if (update) {
