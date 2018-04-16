@@ -53,10 +53,8 @@ public class RachioDevice extends RachioCloudDevice {
                 RachioCloudZone zone = device.zones.get(i);
                 zoneList.put(zone.id, new RachioZone(zone, getThingID()));
             }
-            logger.info("RachioDevice '{}', id={} initialized with {} zones.", device.name, device.id,
-                    device.zones.size());
         } catch (Exception e) {
-            logger.error("RachioDevice: Unable to initialize: {}", e.getMessage());
+            logger.error("RachioDevice: Unable to initialize '{}': {}", device.name, e.getMessage());
         }
     }
 

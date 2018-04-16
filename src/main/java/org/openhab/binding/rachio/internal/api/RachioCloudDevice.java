@@ -22,8 +22,8 @@ class RachioCloudDevice {
     public String id = ""; // "id":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx",
     public String status = ""; // "status":"ONLINE",
     public ArrayList<RachioCloudZone> zones = new ArrayList<>();
-    public Double latitude = 0.0; // "latitude":26.928539276123,
-    public Double longitude = 0.0; // "longitude":-82.3335037231445,
+    public double latitude = 0.0; // "latitude":26.928539276123,
+    public double longitude = 0.0; // "longitude":-82.3335037231445,
     public String name = ""; // "name":"Rachio Turtle Pine House",
     public ArrayList<RachioCloudScheduleRule> scheduleRules = new ArrayList<>(); // "scheduleRules":[]
     public boolean cycleSoak = false; // "cycleSoak":false}

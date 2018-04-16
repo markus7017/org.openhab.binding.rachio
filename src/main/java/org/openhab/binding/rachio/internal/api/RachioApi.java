@@ -172,8 +172,9 @@ public class RachioApi {
         personId = pid.id;
         logger.debug("Using personId '{}'", personId);
         if (lastApiResult.isRateLimitCritical()) {
-            String errorMessage = MessageFormat.format("API Rate Limit is critical ({0} of {1}), reset at {2}",
-                    lastApiResult.rateRemaining, lastApiResult.rateLimit, lastApiResult.rateReset);
+            String errorMessage = MessageFormat.format(
+                    "Rachio Cloud API Rate Limit is critical ({0} of {1}), reset at {2}", lastApiResult.rateRemaining,
+                    lastApiResult.rateLimit, lastApiResult.rateReset);
             throw new RachioApiException(errorMessage, lastApiResult);
         }
         return true;
@@ -336,7 +337,7 @@ public class RachioApi {
                 RachioCloudDevice device = cloudStatus.devices.get(i);
                 if (!device.deleted) {
                     deviceList.put(device.id, new RachioDevice(device));
-                    logger.info("RachioApi: Device '{}' added.", device.id);
+                    logger.trace("RachioApi: Device '{}' initialized, {} zones.", device.name, device.zones.size());
                 }
             }
             return true;
@@ -379,8 +380,9 @@ public class RachioApi {
                 if (t.getType() == f.getType()) {
                     // extend this if to copy more immutable types if interested
                     if (t.getType() == String.class || t.getType() == int.class || t.getType() == long.class
-                            || t.getType() == Double.class || t.getType() == Integer.class || t.getType() == char.class
-                            || t.getType() == boolean.class || t.getType() == Character.class) {
+                            || t.getType() == double.class || t.getType() == char.class || t.getType() == boolean.class
+                            || t.getType() == Double.class || t.getType() == Integer.class || t.getType() == Long.class
+                            || t.getType() == Character.class || t.getType() == Boolean.class) {
                         f.setAccessible(true);
                         t.setAccessible(true);
                         t.set(toObj, f.get(fromObj));

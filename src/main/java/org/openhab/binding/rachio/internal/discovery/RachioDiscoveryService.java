@@ -150,8 +150,9 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
                     ThingUID zoneThingUID = new ThingUID(THING_TYPE_ZONE, bridgeUID, zone.getThingID());
                     zone.setUID(devThingUID, zoneThingUID);
                     if ((cloudHandler == null) || (cloudHandler.getThingByUID(zoneThingUID) == null)) {
-                        logger.info("RachioDiscovery: Zone[{}] '{}' (id={}) added, enabled={}", zone.name,
-                                zone.zoneNumber, zone.id, zone.getEnabled());
+                        logger.info("RachioDiscovery: Zone#{} '{}' (id={}) added, enabled={}", zone.zoneNumber,
+                                zone.name, zone.id, zone.getEnabled());
+
                         @SuppressWarnings({ "unchecked", "rawtypes" })
                         Map<String, Object> zproperties = (Map) zone.fillProperties();
                         DiscoveryResult zoneDiscoveryResult = DiscoveryResultBuilder.create(zoneThingUID)

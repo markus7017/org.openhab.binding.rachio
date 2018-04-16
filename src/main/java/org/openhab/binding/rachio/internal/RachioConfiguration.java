@@ -43,7 +43,7 @@ public class RachioConfiguration {
         for (HashMap.Entry<String, Object> ce : config.entrySet()) {
             String key = ce.getKey();
             String value = ce.getValue().toString();
-            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.name")) {
+            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.id")) {
                 continue;
             }
 

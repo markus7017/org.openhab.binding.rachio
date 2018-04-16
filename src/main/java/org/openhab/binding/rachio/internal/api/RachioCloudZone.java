@@ -20,7 +20,7 @@ class RachioCloudZone {
     public int zoneNumber = 0; // "zoneNumber":6,
     public String name = ""; // "name":"Zone 6 - Garage back",
     public boolean enabled = true; // "enabled":true,
-    public RachioCustomeNozzle customNozzle;
+    // public RachioCustomeNozzle customNozzle ;
     // public RachioCustomSoil customSoil;
     // public RachioCustomSlope customSlope;
     // public RachioCustomCrop customCrop;
