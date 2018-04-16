@@ -94,8 +94,6 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
             HashMap<String, RachioDevice> deviceList = null;
             ThingUID bridgeUID;
             if (cloudHandler == null) {
-                // String apikey = "cc765dfb-d095-4ceb-8062-b9d88dcce911";
-                // String apikey = "3ad01c06-a381-44bf-85fb-014a115e219f";
                 String apikey = bindingConfig.apikey;
                 // String apikey = "";
                 if (apikey.equals("")) {
