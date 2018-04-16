@@ -9,9 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.openhab.binding.rachio.internal;
-
-import org.openhab.binding.rachio.internal.api.RachioEvent;
+package org.openhab.binding.rachio.internal.api;
 
 import com.google.gson.Gson;
 
@@ -22,7 +20,7 @@ import com.google.gson.Gson;
  */
 @SuppressWarnings("unused")
 public class RachioEventString {
-    private final String timestamp;
+    private final String timetstamp;
     private final String summary;
     private final String topic;
     private final String type;
@@ -31,16 +29,16 @@ public class RachioEventString {
     private Gson gson = new Gson();
 
     public RachioEventString(RachioEvent event) {
-        this.timestamp = event.timestamp;
-        this.summary = event.summary;
-        this.topic = event.topic;
-        this.type = event.type;
-        this.subType = event.subType;
+        timetstamp = event.timestamp;
+        summary = event.summary;
+        topic = event.topic;
+        type = event.type;
+        subType = event.subType;
     }
 
     public String toJson() {
         String json = gson.toJson(this);
-        String str = (json.indexOf("\"gson\"") > -1) ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
+        String str = json.contains("\"gson\"") ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
         return str;
     }
 }
