@@ -171,7 +171,7 @@ public class RachioApi {
         RachioCloudPersonId pid = gson.fromJson(lastApiResult.resultString, RachioCloudPersonId.class);
         personId = pid.id;
         logger.debug("Using personId '{}'", personId);
-        if (!lastApiResult.isRateLimitCritical()) {
+        if (lastApiResult.isRateLimitCritical()) {
             String errorMessage = MessageFormat.format("API Rate Limit is critical ({0} of {1}), reset at {2}",
                     lastApiResult.rateRemaining, lastApiResult.rateLimit, lastApiResult.rateReset);
             throw new RachioApiException(errorMessage, lastApiResult);
