@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.rachio.internal;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,71 +30,42 @@ import org.slf4j.LoggerFactory;
 public class RachioConfiguration {
     private final Logger logger = LoggerFactory.getLogger(RachioConfiguration.class);
 
-    public static final String PARAM_APIKEY = "apikey";
-    public static final String PARAM_PERSONID = "personId";
-    public static final String PARAM_POLLING_INTERVAL = "pollingInterval";
-    public static final String PARAM_DEF_RUNTIME = "defaultRuntime";
-    public static final String PARAM_CALLBACK_URL = "callbackUrl";
-    public static final String PARAM_CLEAR_CALLBACK = "clearAllCallbacks";
-    public static final String PARAM_IPFILTER = "ipFilter";
-
     public static final String ERR_APIKEY = "ERROR: No/invalid APIKEY in configuration, check services/rachio.cfg";
 
     public String apikey = "";
-    public String personId = "";
-    public int pollingInterval = 90;
-    public int defaultRuntime = 120;
+    public int pollingInterval = DEFAULT_POLLING_INTERVAL;
+    public int defaultRuntime = DEFAULT_ZONE_RUNTIME;
     public String callbackUrl = "";
     public Boolean clearAllCallbacks = false;
     public String ipFilter = "";
 
     public void updateConfig(Map<String, Object> config) {
-        boolean flBinding = false;
-
-        logger.debug("RachioBinding: Parse configuration");
         for (HashMap.Entry<String, Object> ce : config.entrySet()) {
             String key = ce.getKey();
             String value = ce.getValue().toString();
-            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.id")) {
+            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.name")) {
                 continue;
             }
 
             if (key.equalsIgnoreCase("service.pid")) {
-                flBinding = true;
+                logger.debug("Rachio: Binding configuration:");
             }
             logger.debug("  {}={}", key, value);
 
             if (key.equalsIgnoreCase(PARAM_APIKEY)) {
                 apikey = value;
-            } else if (key.equalsIgnoreCase(PARAM_PERSONID)) {
-                this.personId = value;
             } else if (key.equalsIgnoreCase(PARAM_POLLING_INTERVAL)) {
                 this.pollingInterval = Integer.parseInt(value);
             } else if (key.equalsIgnoreCase(PARAM_DEF_RUNTIME)) {
                 this.defaultRuntime = Integer.parseInt(value);
             } else if (key.equalsIgnoreCase(PARAM_CALLBACK_URL)) {
                 this.callbackUrl = value;
+            } else if (key.equalsIgnoreCase(PARAM_IPFILTER)) {
+                this.ipFilter = value;
             } else if (key.equalsIgnoreCase(PARAM_CLEAR_CALLBACK)) {
                 String str = value;
                 this.clearAllCallbacks = str.toLowerCase().equals("true");
-            } else if (key.equalsIgnoreCase(PARAM_IPFILTER)) {
-                this.ipFilter = value;
             }
         }
-
-        if (flBinding) {
-            logger.debug("Rachio Binding Configuration:");
-        } else {
-            logger.debug("Rachio Thing Configuration:");
-
-        }
-        logger.debug(
-                "  apikey='{}', personId='{}', pollingInterval={}s, defaultRuntime={}s, callbackUrl='{}', clearAllCallbacks={}",
-                apikey, personId, pollingInterval, defaultRuntime, callbackUrl, clearAllCallbacks);
-    } // updateConfig()
-
-    public void setPersonId(String personId) {
-        this.personId = personId;
-        logger.debug("Rachio: personId updated to '{}'", this.personId);
-    }
-} // class // RachioConfiguration
+    } // RachioBindingConfiguration
+}

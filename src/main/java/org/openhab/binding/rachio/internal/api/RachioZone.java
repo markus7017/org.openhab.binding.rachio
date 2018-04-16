@@ -20,8 +20,6 @@ import java.util.Map;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.handler.RachioZoneHandler;
-import org.openhab.binding.rachio.internal.RachioEventString;
-import org.openhab.binding.rachio.internal.util.Parse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +28,13 @@ import org.slf4j.LoggerFactory;
  *
  * @author Markus Michels (markus7017) - Initial contribution
  */
-public class RachioZone {
+
+public class RachioZone extends RachioCloudZone {
     private final Logger logger = LoggerFactory.getLogger(RachioZone.class);
     protected ThingUID dev_uid;
     protected ThingUID zone_uid;
     protected RachioZoneHandler thingHandler;
-    public String dev_unique_id;
+    protected String uniqueId = "";
 
     // RachioApi: Zone (click expand)
     /*
@@ -96,70 +95,25 @@ public class RachioZone {
      * "runtime":1391
      * }
      */
+    public String lastEvent = "";
+    protected int startRunTime = 0;
 
-    protected String zone_id = "";
-    protected String zone_name = "";
-    protected Integer zone_number = 0;
-    protected Boolean zone_enabled = false;
-    protected Double zone_avl_water = 0.0;
-    protected Integer zone_root_depth = 0;
-    protected Double zone_mgtAllowdDeletion = 0.0;
-    protected Double zone_efficiency = 0.0;
-    protected String zone_imageUrl = "";
-    protected Integer zone_yardAreaSqft = 0;
-    protected Double zone_water_depth = 0.0;
-    protected Integer zone_runtime = 0;
-    protected Integer zone_lastTime = 0;
-    protected Integer zone_lastDuration = 0;
-    protected String nozzle_name = "";
-    protected String nozzle_imageUrl = "";
-    protected String nozzle_headCat = "";
-    protected Double nozzle_inchesPerHour = 0.0;
-    protected String zone_event = "";
+    /**
+     * Use reflection to shallow copy simple type fields with matching names from one object to another
+     *
+     * @param fromObj the object to copy from
+     * @param toObj the object to copy to
+     */
 
-    protected int zone_startRunTime = 0;
-
-    public RachioZone(String json, String uniqueId) {
+    public RachioZone(RachioCloudZone zone, String uniqueId) {
         try {
-            logger.trace("RachioZonee: initialize, JSON={}", json);
-
-            dev_unique_id = uniqueId;
-
-            // Parse json zone information - see end of this file for a JSON sample
-            zone_id = Parse.jsonString(json, "id", "");
-            zone_name = Parse.jsonString(json, "name", "");
-            zone_number = Parse.jsonInt(json, "zoneNumber", 0);
-            zone_enabled = Parse.jsonBoolean(json, "enabled", false);
-            zone_avl_water = Parse.jsonDouble(json, "availableWater", 0.0);
-            zone_root_depth = Parse.jsonInt(json, "rootZoneDepth", 0);
-            zone_mgtAllowdDeletion = Parse.jsonDouble(json, "managementAllowedDepletion", 0.0);
-            zone_efficiency = Parse.jsonDouble(json, "availableWater", 0.0);
-            zone_imageUrl = Parse.jsonString(json, "imageUrl", "");
-            zone_yardAreaSqft = Parse.jsonInt(json, "yardAreaSquareFeet", 0);
-            zone_water_depth = Parse.jsonDouble(json, "depthOfWater", 0.0);
-            zone_runtime = Parse.jsonInt(json, "runtime", 0);
-
-            zone_lastDuration = Parse.jsonInt(json, "lastWateredDate", 0);
-            zone_lastTime = Parse.jsonInt(json, "lastWateredDuration", 0);
-
-            // Parse noizzle information
-            String n_json = Parse.jsonSection(json, "customNozzle");
-            logger.trace("RachioZone: noizzle JSON={}", json);
-            nozzle_name = Parse.jsonString(n_json, "name", "");
-            nozzle_imageUrl = Parse.jsonString(n_json, "imageUrl", "");
-            nozzle_headCat = Parse.jsonString(n_json, "category", "");
-            nozzle_inchesPerHour = Parse.jsonDouble(n_json, "inchesPerHour", 0.0);
-
-            n_json = Parse.jsonSection(json, "customSoil");
-            n_json = Parse.jsonSection(json, "customSlope");
-            n_json = Parse.jsonSection(json, "customCrop");
-            n_json = Parse.jsonSection(json, "customShade");
+            RachioApi.copyMatchingFields(zone, this);
+            this.uniqueId = uniqueId;
+            logger.trace("RachioZone: Zone '{}' (number={}, id={}) initialized.", zone.name, zone.zoneNumber, zone.id);
         } catch (Exception e) {
-            logger.error("Unable to parse RachioZone from API ({}) JSON='{}'", e.getMessage(), json);
-
+            logger.error("RachioZone: Unable to initialized: {}", e.getMessage());
         }
-
-    } // RachioZone(String json, String uniqueId)
+    }
 
     public void setThingHandler(RachioZoneHandler zoneHandler) {
         thingHandler = zoneHandler;
@@ -175,26 +129,26 @@ public class RachioZone {
          * || (this.zone_avl_water != czone.zone_avl_water) || (this.zone_efficiency != czone.zone_efficiency)
          * || (this.zone_water_depth != czone.zone_water_depth) || (this.zone_runtime != czone.zone_runtime)) {
          */
-        if ((czone == null) || !this.zone_number.equals(czone.zone_number)
-                || !this.zone_enabled.equals(czone.zone_enabled) || !this.zone_avl_water.equals(czone.zone_avl_water)
-                || !this.zone_efficiency.equals(czone.zone_efficiency)
-                || !this.zone_water_depth.equals(czone.zone_water_depth)
-                || !this.zone_runtime.equals(czone.zone_runtime)) {
+        if ((czone == null) || (this.zoneNumber != czone.zoneNumber) || (this.enabled != czone.enabled)
+                || (this.availableWater != czone.availableWater) || (this.efficiency != czone.efficiency)
+                || (this.lastWateredDate != czone.lastWateredDate) || (this.depthOfWater != czone.depthOfWater)
+                || (this.runtime != czone.runtime)) {
             return false;
         }
         return true;
     } // compare()
 
     public void update(RachioZone updatedZone) {
-        if ((updatedZone == null) || !getId().equals(updatedZone.getId())) {
+        if ((updatedZone == null) || !id.equalsIgnoreCase(updatedZone.id)) {
             return;
         }
-        zone_number = updatedZone.zone_number;
-        zone_enabled = updatedZone.zone_enabled;
-        zone_avl_water = updatedZone.zone_avl_water;
-        zone_efficiency = updatedZone.zone_efficiency;
-        zone_water_depth = updatedZone.zone_water_depth;
-        zone_runtime = updatedZone.zone_runtime;
+        zoneNumber = updatedZone.zoneNumber;
+        enabled = updatedZone.enabled;
+        availableWater = updatedZone.availableWater;
+        efficiency = updatedZone.efficiency;
+        depthOfWater = updatedZone.depthOfWater;
+        runtime = updatedZone.runtime;
+        lastWateredDate = updatedZone.lastWateredDate;
     } // update()
 
     public void setUID(ThingUID deviceUID, ThingUID zoneUID) {
@@ -211,99 +165,50 @@ public class RachioZone {
     }
 
     public String getThingID() {
-        return dev_unique_id + "-" + zone_number;
+        return uniqueId + "-" + zoneNumber;
     }
 
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put(PROPERTY_NAME, getName());
-        properties.put(PROPERTY_ZONE_ID, getId());
+        properties.put(PROPERTY_NAME, name);
+        properties.put(PROPERTY_ZONE_ID, id);
         return properties;
     }
 
-    public String getId() {
-        return zone_id;
-    }
-
-    public String getName() {
-        return zone_name;
-    }
-
-    public int getZoneNumber() {
-        return zone_number;
-    }
-
     public OnOffType getEnabled() {
-        return zone_enabled ? OnOffType.ON : OnOffType.OFF;
+        return enabled ? OnOffType.ON : OnOffType.OFF;
     }
 
-    public Double getAvlWater() {
-        return zone_avl_water;
-    }
+    // public String getNozzleName() {
+    // return customNozzle.name;
+    // }
 
-    public int getRootDepth() {
-        return zone_root_depth;
-    }
+    // public String getNozzleImageUrl() {
+    // return customNozzle.imageUrl;
+    // }
 
-    public Double getMsgAllowsDeletion() {
-        return zone_mgtAllowdDeletion;
-    }
+    // public Double getNozzleInchesPerHour() {
+    // return customNozzle.inchesPerHour;
+    //
 
-    public Double getEfficiency() {
-        return zone_efficiency;
-    }
-
-    public int getYardAreaSqft() {
-        return zone_yardAreaSqft;
-    }
-
-    public double getWaterDepth() {
-        return zone_water_depth;
-    }
-
-    public int getRuntime() {
-        return zone_runtime;
-    }
-
-    public String getImageUrl() {
-        return zone_imageUrl;
-    }
-
-    public String getNozzleName() {
-        return nozzle_name;
-    }
-
-    public String getNozzleImageUrl() {
-        return nozzle_imageUrl;
-    }
-
-    public String getNozzleHeadCat() {
-        return nozzle_headCat;
-    }
-
-    public Double getNozzleInchesPerHour() {
-        return nozzle_inchesPerHour;
-    }
-
-    public void setStartRunTime(int duration) {
-        zone_startRunTime = duration;
+    public void setStartRunTime(int runtime) {
+        startRunTime = runtime;
     }
 
     public int getStartRunTime() {
-        return zone_startRunTime;
+        return startRunTime;
     }
 
     public void setEvent(RachioEvent event) {
-        RachioEventString e = new RachioEventString(event);
-        zone_event = e.toJson();
+        lastEvent = new RachioEventString(event).toJson();
     }
 
     public String getEvent() {
-        return zone_event;
+        return lastEvent;
     }
 
     public boolean isEnable() {
-        return zone_enabled;
+        return enabled;
     }
 
 } // class RachioZone

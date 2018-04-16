@@ -79,23 +79,25 @@ public class RachioWebHookServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
         String data = inputStreamToString(request);
         try {
+            // Fix malformed API v3 Event JSON
+            data = data.replace("\"{", "{");
+            data = data.replace("}\"", "}");
+            data = data.replace("\\", "");
+            data = data.replace("\"?\"", "'?'"); // fix json for"summary" : "<Device> has turned off and back on. This
+                                                 // is usually not a problem. If power cycles continue, tap "?" above to
+                                                 // contact Rachio Support.",
+
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
             }
             String path = request.getRequestURI();
-            logger.debug("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
+            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getProtocol());
             if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
                 logger.error("RachioWebHook: Invalid request received - path = {}", path);
                 return;
             }
-            // String ipFilter = rachioHandlerFactory.getIpFilter();
-            // if (!RachioNetwork.ipInSubnet(ipAddress, ipFilter)) {
-            // logger.info("RachioWebHook: IP address '{}' does not match the configured filter '{}', data='{}'",
-            // ipAddress, ipFilter, data);
-            // // return;
-            // }
 
             X509Certificate cert = extractCertificate(request);
             if (cert != null) {
@@ -104,21 +106,16 @@ public class RachioWebHookServlet extends HttpServlet {
             }
 
             if (data != null) {
-                // Fix malformed API v3 Event JSON
-                data = data.replace("\"{", "{");
-                data = data.replace("}\"", "}");
-                data = data.replace("\\", "");
-
                 logger.trace("RachioWebHook: Data='{}'", data);
                 RachioEvent event = gson.fromJson(data, RachioEvent.class);
                 if ((event != null) && (rachioHandlerFactory != null)) {
-                    logger.trace("RachioEvent {}.{} for device '{}': {} (externalId='{}')", event.category, event.type,
-                            event.deviceId, event.summary, event.externalId);
+                    logger.trace("RachioEvent {}.{} for device '{}': {}", event.category, event.type, event.deviceId,
+                            event.summary);
 
-                    event.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
+                    event.apiResult.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
                             request.getHeader(RACHIO_JSON_RATE_REMAINING), request.getHeader(RACHIO_JSON_RATE_RESET));
 
-                    if (!rachioHandlerFactory.webHookEvent(event)) {
+                    if (!rachioHandlerFactory.webHookEvent(ipAddress, event)) {
                         logger.debug("RachioWebHook: Event-JSON='{}'", data);
                     }
 

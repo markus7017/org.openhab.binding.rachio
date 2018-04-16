@@ -317,7 +317,6 @@ The file org.openhab.binding.<binding>-<version>-SNAPSHOT.jar will be created in
 * <a href="https://community.openhab.org/c/apps-services/my-openhab">Lates topics in the Community</a>
 * <a href="https://community.openhab.org/t/taming-openhab-2-logging/13976">Taming openHAB 2 Logging</a>
 * <a href="https://community.openhab.org/t/influxdb-grafana-persistence-and-graphing/13761">Using Garfana for Charting</a>
-* <a href="https://rachio.readme.io/v1.0/docs">Rachio API documentation</a> (specific for the Rachio Binding)
-* <a href="https://support.rachio.com/hc/en-us/articles/115010541948-How-secure-is-my-Rachio-controller-">Rachio Security Concept</a>
-* <a https://ip-ranges.amazonaws.com/ip-ranges.json>AWS's IP address ranges by region</a>
+* <a href="https://rachio.readme.io/docs/getting-started>Rachio API documentation</a> (specific for the Rachio Binding)</a>
+* <a href="https://rachio.readme.io/docs/sample-webhook-json">Racho WebHooks - JSON format</a>
 

@@ -43,6 +43,8 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     private RachioConfiguration bindingConfig = new RachioConfiguration();
     private boolean scanning = false;
 
+    private RachioApi rachioApi;
+
     private RachioBridgeHandler cloudHandler;
 
     /**
@@ -90,9 +92,10 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
 
             logger.debug("Starting scan for new Rachio controllers");
             HashMap<String, RachioDevice> deviceList = null;
-            RachioApi rapi = new RachioApi();
             ThingUID bridgeUID;
             if (cloudHandler == null) {
+                // String apikey = "cc765dfb-d095-4ceb-8062-b9d88dcce911";
+                // String apikey = "3ad01c06-a381-44bf-85fb-014a115e219f";
                 String apikey = bindingConfig.apikey;
                 // String apikey = "";
                 if (apikey.equals("")) {
@@ -100,8 +103,9 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
                     return;
                 }
                 bridgeUID = new ThingUID(BINDING_ID, "cloud", apikey);
-                rapi.initialize(apikey, null, bridgeUID);
-                deviceList = rapi.getDevices();
+                rachioApi = new RachioApi("");
+                rachioApi.initialize(apikey, bridgeUID);
+                deviceList = rachioApi.getDevices();
                 if (deviceList != null) {
                     @SuppressWarnings({ "unchecked", "rawtypes" })
                     Map<String, Object> bridgeProp = (Map) fillProperties(apikey);
@@ -120,17 +124,16 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
             logger.debug("RachioDiscovery: Found {} devices.", deviceList.size());
             for (HashMap.Entry<String, RachioDevice> de : deviceList.entrySet()) {
                 RachioDevice dev = de.getValue();
-                logger.debug("RachioDiscovery: Check Rachio device with ID '{}'", dev.getId());
+                logger.debug("RachioDiscovery: Check Rachio device with ID '{}'", dev.id);
 
                 // register thing if it not already exists
                 ThingUID devThingUID = new ThingUID(THING_TYPE_DEVICE, bridgeUID, dev.getThingID());
                 dev.setUID(bridgeUID, devThingUID);
                 if ((cloudHandler == null) || (cloudHandler.getThingByUID(devThingUID) == null)) {
-                    logger.info("RachioDiscovery: New Rachio device discovered: '{}' (id {}), S/N={}, MAC={}",
-                            dev.getName(), dev.getId(), dev.getSerial(), dev.getMacAddress());
-                    logger.debug("  latitude={}, longitude={}, elevation={}", dev.getLatitude(), dev.getLongitude(),
-                            dev.getElevation());
-                    logger.info("   device status={}, paused={}, on={}", dev.getStatusStr(), dev.getPaused(),
+                    logger.info("RachioDiscovery: New Rachio device discovered: '{}' (id {}), S/N={}, MAC={}", dev.name,
+                            dev.id, dev.serialNumber, dev.macAddress);
+                    logger.debug("  latitude={}, longitude={}", dev.latitude, dev.longitude);
+                    logger.info("   device status={}, paused/sleep={}, on={}", dev.status, dev.getSleepMode(),
                             dev.getEnabled());
                     @SuppressWarnings({ "unchecked", "rawtypes" })
                     Map<String, Object> properties = (Map) dev.fillProperties();
@@ -143,19 +146,19 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
                 logger.info("RachioDiscovery: Found {} zones for this device.", zoneList.size());
                 for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
                     RachioZone zone = ze.getValue();
-                    logger.debug("RachioDiscovery: Checking zone with ID '{}'", zone.getId());
+                    logger.debug("RachioDiscovery: Checking zone with ID '{}'", zone.id);
 
                     // register thing if it not already exists
                     ThingUID zoneThingUID = new ThingUID(THING_TYPE_ZONE, bridgeUID, zone.getThingID());
                     zone.setUID(devThingUID, zoneThingUID);
                     if ((cloudHandler == null) || (cloudHandler.getThingByUID(zoneThingUID) == null)) {
-                        logger.info("RachioDiscovery: Zone[{}] '{}' (id={}) added, enabled={}", zone.getName(),
-                                zone.getZoneNumber(), zone.getId(), zone.getEnabled());
+                        logger.info("RachioDiscovery: Zone[{}] '{}' (id={}) added, enabled={}", zone.name,
+                                zone.zoneNumber, zone.id, zone.getEnabled());
                         @SuppressWarnings({ "unchecked", "rawtypes" })
                         Map<String, Object> zproperties = (Map) zone.fillProperties();
                         DiscoveryResult zoneDiscoveryResult = DiscoveryResultBuilder.create(zoneThingUID)
                                 .withProperties(zproperties).withBridge(bridgeUID)
-                                .withLabel(dev.getName() + "[" + zone.getZoneNumber() + "]: " + zone.getName()).build();
+                                .withLabel(dev.name + "[" + zone.zoneNumber + "]: " + zone.name).build();
                         thingDiscovered(zoneDiscoveryResult);
                     } // if (cloudHandler.getThingByUID(zoneThingUID) == null)
 

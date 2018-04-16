@@ -10,22 +10,71 @@
  */
 package org.openhab.binding.rachio.internal;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
+import java.util.ArrayList;
+
 import org.apache.commons.net.util.SubnetUtils;
+import org.openhab.binding.rachio.internal.api.RachioHttp;
 //import com.offbynull.portmapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 /**
  * RachioNetwork: Implement network related functions
- * 
+ *
  * @author Markus Michels (markus7017) - Initial contribution
  */
 public class RachioNetwork {
     private final Logger logger = LoggerFactory.getLogger(RachioNetwork.class);
 
+    public class AwsIpAddressRange {
+        public String ip_prefix = "";
+        public String region = "";
+        public String service = "";
+    }
+
+    public class AwsIpList {
+        public String syncToken = "";
+        public String createDate = "";
+        public ArrayList<AwsIpAddressRange> prefixes = new ArrayList<>();
+    }
+
     // private MappedPort mappedPort;
     private String mappedPort;
     private long lastRefresh = 0;
+    private ArrayList<AwsIpAddressRange> awsIpRanges = new ArrayList<>();
+
+    public boolean initializeAwsList() {
+        try {
+            // Get currently assigned IP address ranges from AWS cloud.
+            // The Rachio cloud service is hosted on AWS. The list will function as a filter to make sure that the
+            // webhook call was originated by the AWS infrastructure - not perfect security, but helps to avoid abuse
+            // and protect OH in
+            // some kind
+            RachioHttp http = new RachioHttp("");
+            String jsonList = http.httpGet(AWS_IPADDR_DOWNLOAD_URL, "").resultString;
+            Gson gson = new Gson();
+            AwsIpList list = gson.fromJson(jsonList, AwsIpList.class);
+            for (int i = 0; i < list.prefixes.size(); i++) {
+                AwsIpAddressRange entry = list.prefixes.get(i);
+                if (entry.region.startsWith(AWS_IPADDR_REGION_FILTER)) {
+                    logger.trace("RachioNetwork: Adding range '{}' (region '{}' to AWS IP address list",
+                            entry.ip_prefix, entry.region);
+                    awsIpRanges.add(entry);
+                }
+            }
+            logger.debug(
+                    "RachioNetwork: AWS address list initialized, {} entries (will be used to verify inboud Rachio events)",
+                    awsIpRanges.size());
+            return true;
+        } catch (Exception e) {
+            logger.error("RachioNetwork: Unable to initialize: {}", e.getMessage());
+        }
+        return false;
+    }
 
     /**
      * Checks if client ip equals or is in range of ip networks provided by
@@ -35,7 +84,7 @@ public class RachioNetwork {
      * @param ipList like "127.0.0.1;192.168.0.0/24;10.0.0.0/8"
      * @return true if client ip from the list os ips and networks
      */
-    public static boolean ipInSubnet(String clientIp, String ipList) {
+    public static boolean isIpInSubnet(String clientIp, String ipList) {
         if ((ipList == null) || ipList.equals("")) {
             // No ip address provided
             return true;
@@ -54,6 +103,21 @@ public class RachioNetwork {
         }
         return false;
     } // evaluateIp
+
+    public boolean isIpInAwsList(String clientIp) {
+        if (awsIpRanges.size() == 0) {
+            // filtering not enabled
+            return true;
+        }
+
+        for (int i = 0; i < awsIpRanges.size(); i++) {
+            AwsIpAddressRange e = awsIpRanges.get(i);
+            if (isIpInSubnet(clientIp, e.ip_prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public boolean initializePortMapping(int externalPort, int internalPort, int timeoutSec) {
         try {
