@@ -129,10 +129,10 @@ public class RachioZone extends RachioCloudZone {
          * || (this.zone_avl_water != czone.zone_avl_water) || (this.zone_efficiency != czone.zone_efficiency)
          * || (this.zone_water_depth != czone.zone_water_depth) || (this.zone_runtime != czone.zone_runtime)) {
          */
-        if ((czone == null) || (this.zoneNumber != czone.zoneNumber) || (this.enabled != czone.enabled)
-                || (this.availableWater != czone.availableWater) || (this.efficiency != czone.efficiency)
-                || (this.lastWateredDate != czone.lastWateredDate) || (this.depthOfWater != czone.depthOfWater)
-                || (this.runtime != czone.runtime)) {
+        if ((czone == null) || (zoneNumber != czone.zoneNumber) || (enabled != czone.enabled)
+                || (availableWater != czone.availableWater) || (efficiency != czone.efficiency)
+                || (lastWateredDate != czone.lastWateredDate) || (depthOfWater != czone.depthOfWater)
+                || (runtime != czone.runtime)) {
             return false;
         }
         return true;

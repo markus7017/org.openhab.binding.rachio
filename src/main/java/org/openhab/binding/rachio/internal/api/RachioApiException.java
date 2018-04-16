@@ -20,30 +20,30 @@ import org.openhab.binding.rachio.internal.api.RachioEvent.RachioApiResult;
  * @author Markus Michels (markus7017) - Initial contribution
  */
 public class RachioApiException extends Exception {
-	private static final long serialVersionUID = -2579498702258574787L;
+    private static final long serialVersionUID = -2579498702258574787L;
 
-	public RachioApiException(String message) {
-		super(message);
-	}
+    public RachioApiException(String message) {
+        super(message);
+    }
 
-	public RachioApiException(String message, Throwable throwable) {
-		super(message, throwable);
-	}
+    public RachioApiException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
 
-	private RachioApiResult apiResult = new RachioApiResult();
+    private RachioApiResult apiResult = new RachioApiResult();
 
-	public RachioApiException(String message, RachioApiResult result) {
-		super(message);
-		apiResult = result;
-	}
+    public RachioApiException(String message, RachioApiResult result) {
+        super(message);
+        apiResult = result;
+    }
 
-	public RachioApiResult getApiResult() {
-		return apiResult;
-	}
+    public RachioApiResult getApiResult() {
+        return apiResult;
+    }
 
-	@Override
-	public String getMessage() {
-		return super.getMessage();
-	}
+    @Override
+    public String getMessage() {
+        return super.getMessage();
+    }
 
 }
