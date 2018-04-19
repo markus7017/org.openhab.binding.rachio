@@ -151,11 +151,12 @@ public class RachioHttp {
             logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls,
                     request.getRequestMethod(), result.url);
             result.responseCode = request.getResponseCode();
-            if ((result.responseCode != HTTP_OK) && ((!result.requestMethod.equals(HTTP_METHOD_DELETE))
-                    || (result.responseCode != HTTP_NO_CONTENT))) {
+            if ((result.responseCode != HTTP_OK)
+                    && ((result.responseCode != HTTP_NO_CONTENT) || (!result.requestMethod.equals(HTTP_METHOD_DELETE)
+                            && !result.requestMethod.equals(HTTP_METHOD_DELETE)))) {
                 String message = MessageFormat.format(
-                        "RachioHttp: Error sending HTTP GET request to {0} . Got response code: {1}", url,
-                        result.responseCode);
+                        "RachioHttp: Error sending HTTP {} request to {0} m- http response code={1}",
+                        request.getRequestMethod(), url, result.responseCode);
                 throw new RachioHttpException(message);
             }
 
