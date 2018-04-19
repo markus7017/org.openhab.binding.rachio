@@ -162,7 +162,7 @@ public class RachioApi {
 
     private Boolean initializePersonId() throws RachioApiException, RachioHttpException {
         if (!personId.isEmpty()) {
-            logger.debug("RachioApi: Using cached personId ('{}').", personId);
+            logger.trace("RachioApi: Using cached personId ('{}').", personId);
             return true;
         }
 

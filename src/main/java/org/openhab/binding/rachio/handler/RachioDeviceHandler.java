@@ -72,7 +72,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                 ThingHandler handler = bridge.getHandler();
                 if ((handler != null) && (handler instanceof RachioBridgeHandler)) {
                     cloudHandler = (RachioBridgeHandler) handler;
-                    // dev = cloudHandler.getDevByUID(this.getThing().getUID());
+                    dev = cloudHandler.getDevByUID(this.getThing().getUID());
                     dev.setThingHandler(this);
                     cloudHandler.registerStatusListener(this);
                     cloudHandler.registerWebHook(dev.id);
@@ -90,8 +90,8 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                     }
                 }
             }
-        } catch (Exception e) {
-            logger.error("RachioDev: Initialization failed: {}", e.getMessage());
+        } catch (Throwable e) {
+            logger.error("RachioDevice: Initialization failed: {}", e.getMessage());
         }
         updateStatus(ThingStatus.OFFLINE);
     } // initialize()

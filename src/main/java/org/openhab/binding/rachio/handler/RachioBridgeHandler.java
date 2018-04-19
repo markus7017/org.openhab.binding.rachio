@@ -174,7 +174,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
 
             RachioApi checkApi = new RachioApi(personId);
             createCloudConnection(checkApi);
-            if (!checkApi.getLastApiResult().isRateLimitBlocked()) {
+            if (checkApi.getLastApiResult().isRateLimitBlocked()) {
                 String errorCritical = "";
                 errorCritical = MessageFormat.format(
                         "RachioBridge: API access blocked on update ({0} / {1}), reset at {2}",
@@ -185,7 +185,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
                                                                                                          // bridge+devices+zones
                 return;
             }
-            if (!checkApi.getLastApiResult().isRateLimitWarning()) {
+            if (checkApi.getLastApiResult().isRateLimitWarning()) {
                 skipCalls++;
                 if (skipCalls % RACHIO_RATE_SKIP_CALLS > 0) {
                     logger.info("RachioBridge: API result is getting critical -> skip update ({} / {})", skipCalls,

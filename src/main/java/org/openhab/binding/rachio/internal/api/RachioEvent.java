@@ -82,7 +82,7 @@ public class RachioEvent {
                 return;
             }
 
-            logger.debug("RachioApi: Remaing number of API: limit={}, remaining={}, reset at {}", rateLimit,
+            logger.trace("RachioApi: Remaing number of API: limit={}, remaining={}, reset at {}", rateLimit,
                     this.rateRemaining, this.rateReset);
         }
 
