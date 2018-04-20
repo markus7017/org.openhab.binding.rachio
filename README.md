@@ -19,15 +19,15 @@ This binding allows to retrieve status information from Rachio Sprinklers and co
 
 ## Discovery
 
-_Describe the available auto-discovery features here. Mention for what it works and what needs to be kept in mind when using it._
 The device setup is read from the Cloude setup, so it shares the same items as the Smartphone and Web Apps, so there is no special setup required. In fact all Apps (including this binding) control the same device. The binding implements monitoring and control functions, but no configuration etc. To change configuration you could use the smartphone App. 
 
 As a result the following things are created
-1xcloud per account
-nxdevice for each controller
-nxzone for each zone on any controller
+- 1*cloud per account
+- one device for each controller
+- n zones for each zone on any controller
 
 Example: 2 controllers with 8 zones each under the same account creates 19 things (1xbridge, 2xdevice, 16xzone). 
+
 ## Binding Configuration
 
 If the apikey is configured in the rachio.cfg file a bridge thing is created dynamically and device discovery starts. 
@@ -44,8 +44,6 @@ If the apikey is configured in the rachio.cfg file a bridge thing is created dyn
 See configuration of bridge things below for a description of the config parameters.
 
 ## Thing Configuration
-
-_Describe what is needed to manually configure a thing, either through the (Paper) UI or via a thing-file. This should be mainly about its mandatory and optional configuration parameters. A short example entry for a thing file can help!_
 
 ### bridge thing - represents a Rachio Cloud account
 
@@ -131,6 +129,33 @@ Bridge rachio:cloud:1 [ apikey="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx", pollingInterv
 ```
 
 
-## Any custom content here!
+## Configuring the event callback
 
-_Feel free to add additional sections for whatever you think should also be mentioned about your binding!_
+The Rachio Cloud API supports an event driven model. The binding registeres a so called "web hook" to receive events. In fact this is kind of call callback via http. Receiving those notifications requires two things
+- the binding listering to a specific URI (in this case /rachio/webhook)
+- a port forward on the router to direct inbound requests to the OH device
+
+The router configuration has to be done manually (supporting UPnP-based auto-config is planned, but not yet implemented). In general the following logic applies
+- usually openHAB listens on port 8080 for http traffic
+- you need to create a forward from a user defined port exposed to the Inernet to the OH ip:8080
+  e.g. forward external port 50000 tcp to openHAB ip port 8080
+  if the router is asking for a port range use the same values external-ip:50000-50000 -> internal_ip: 8080-8080
+- this results into the callbackUrl http://mydomain.com:50000/rachio/webhook
+  you need to included this in the thing definition (callbackUrl=xxx), see above
+
+If events are not received (e.g. no events are shown after starting / stopping a zone) the most common reasons is a mis-configuration of the port forwarding. Check openHAB.log, no events are received if you don't see RachioEvent messages. Do the following steps to verify the setup
+- run a browser and open URL http://127.0.0.1:8080/rachio/webhook - you should get a white screen (no error message) and should the a message in the OH log that the binding is not able to process the request.
+- ping your domain and make sure that it returns the external IP of your router
+- open URL http://<your domain>:<port>/rachio/webhook - you should see the same page rather than an error
+
+you could verify the proper registration of the callback after the binding is initialized
+- get the deviceId for the controller from the Rachio log entries
+- open a terminal window and run 
+
+```
+curl -X GET -H "Content-Type: application/json" -H "Authorization: Bearer xxxxxxxx-xxxx-xxxx-xxxx-dc8d5c90350d" https://api.rach.io/1/public/notification/yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyy/webhook
+```
+  replace xxxxxxxx-... with the apikey and yyyyyyyy... with the device id found in the OH log
+- you should see the configured url
+ 
+
