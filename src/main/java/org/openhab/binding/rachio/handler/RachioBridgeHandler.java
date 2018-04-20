@@ -12,6 +12,7 @@ package org.openhab.binding.rachio.handler;
 
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -350,7 +351,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     public boolean startZone(String zoneId, int runTime) {
         try {
             return rachioApi.runZone(zoneId, runTime);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("RachioBridgeHandler.startZone failed: {}", e.getMessage());
         }
         return false;
@@ -549,8 +550,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     }
 
     public String getExternalId() {
-        // for now, just the api key
-        return getApiKey();
+        // return a MD5 of the apikey
+        return getMD5Hash(getApiKey());
     }
 
     /**
@@ -654,6 +655,37 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
         if (pollingJob != null && !pollingJob.isCancelled()) {
             pollingJob.cancel(true);
             pollingJob = null;
+        }
+    }
+
+    private static final String MD5_HASH_ALGORITHM = "MD5";
+    private static final String UTF8_CHAR_SET = "UTF-8";
+
+    /**
+     * Given a string, return the MD5 hash of the String.
+     *
+     * @param unhashed The string contents to be hashed.
+     * @return MD5 Hashed value of the String. Null if there is a problem hashing the String.
+     */
+    public static String getMD5Hash(String unhashed) {
+        try {
+            byte[] bytesOfMessage = unhashed.getBytes(UTF8_CHAR_SET);
+
+            MessageDigest md5 = MessageDigest.getInstance(MD5_HASH_ALGORITHM);
+
+            byte[] hash = md5.digest(bytesOfMessage);
+
+            StringBuilder sb = new StringBuilder(2 * hash.length);
+
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+
+            String digest = sb.toString();
+
+            return digest;
+        } catch (Exception exp) {
+            return null;
         }
     }
 

@@ -138,6 +138,8 @@ public class RachioHttp {
             request.setConnectTimeout(15000); // set timeout to 15 seconds
             request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
             request.setRequestProperty("Content-Type", WEBHOOK_APPLICATION_JSON);
+            logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls,
+                    request.getRequestMethod(), result.url);
             if (method.equals(HTTP_METHOD_PUT) || method.equals(HTTP_METHOD_POST)) {
                 request.setDoOutput(true);
                 DataOutputStream wr = new DataOutputStream(request.getOutputStream());
@@ -148,18 +150,7 @@ public class RachioHttp {
             BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
             StringBuilder response = new StringBuilder();
 
-            logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls,
-                    request.getRequestMethod(), result.url);
             result.responseCode = request.getResponseCode();
-            if ((result.responseCode != HTTP_OK)
-                    && ((result.responseCode != HTTP_NO_CONTENT) || (!result.requestMethod.equals(HTTP_METHOD_DELETE)
-                            && !result.requestMethod.equals(HTTP_METHOD_DELETE)))) {
-                String message = MessageFormat.format(
-                        "RachioHttp: Error sending HTTP {} request to {0} m- http response code={1}",
-                        request.getRequestMethod(), url, result.responseCode);
-                throw new RachioHttpException(message);
-            }
-
             if (request.getHeaderField(RACHIO_JSON_RATE_LIMIT) != null) {
                 result.setRateLimit(request.getHeaderField(RACHIO_JSON_RATE_LIMIT),
                         request.getHeaderField(RACHIO_JSON_RATE_REMAINING),
@@ -169,6 +160,15 @@ public class RachioHttp {
                             result.rateRemaining, result.rateLimit, result.rateReset);
                     throw new RachioApiException(message, result);
                 }
+            }
+
+            if ((result.responseCode != HTTP_OK)
+                    && ((result.responseCode != HTTP_NO_CONTENT) || (!result.requestMethod.equals(HTTP_METHOD_PUT)
+                            && !result.requestMethod.equals(HTTP_METHOD_DELETE)))) {
+                String message = MessageFormat.format(
+                        "RachioHttp: Error sending HTTP {0} request to {2} - http response code={2}",
+                        request.getRequestMethod(), url, result.responseCode);
+                throw new RachioHttpException(message);
             }
 
             String inputLine;
