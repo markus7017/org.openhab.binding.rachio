@@ -271,15 +271,19 @@ public class RachioDevice extends RachioCloudDevice {
     public String getAllRunZonesJson(int defaultRuntime) {
         boolean flAll = runList.equals("") || runList.equalsIgnoreCase("ALL");
 
+        String list = runList + ","; // make sure last entry is terminated by ','
         String json = "{ \"zones\" : [";
         for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
             RachioZone zone = ze.getValue();
-            if (flAll || runList.contains(zone.zoneNumber + ",") && (zone.getEnabled() == OnOffType.ON)) {
+            if (flAll || (list.contains(zone.zoneNumber + ",") && (zone.getEnabled() == OnOffType.ON))) {
                 int runtime = zone.getStartRunTime() > 0 ? zone.getStartRunTime() : defaultRuntime;
+                if (json.contains("\"id\"")) {
+                    json = json + ", ";
+                }
                 json = json + "{ \"id\" : \"" + zone.id + "\", \"duration\" : " + runtime + ", \"sortOrder\" : 1}";
             }
         }
-        json = json + "]";
+        json = json + "] }";
         return json;
     }
 

@@ -130,7 +130,7 @@ public class RachioBindingConstants {
     public static final String APIURL_DEV_DELETE_WEBHOOK = "notification/webhook";
 
     public static final String APIURL_ZONE_PUT_START = "zone/start"; // start a zone
-    public static final String APIURL_ZONE_PUT_MULTIPLE_START = "/zone/start_multiple"; // start multiple zones
+    public static final String APIURL_ZONE_PUT_MULTIPLE_START = "zone/start_multiple"; // start multiple zones
 
     // private static final String APIURL_NOT_GET_LIST = "notification/webhook_event_type"; // get list of available
 
