@@ -21,7 +21,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.MessageFormat;
 
-import org.openhab.binding.rachio.internal.api.RachioEvent.RachioApiResult;
+import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiException;
+import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;;
 
@@ -35,14 +36,6 @@ import org.slf4j.LoggerFactory;;
 public class RachioHttp {
     private final Logger logger = LoggerFactory.getLogger(RachioHttp.class);
 
-    public static class RachioHttpException extends Exception {
-        private static final long serialVersionUID = 1L;
-
-        public RachioHttpException(String message) {
-            super(message);
-        }
-    }
-
     private int apiCalls = 0;
     private String apikey = "";
 
@@ -52,7 +45,7 @@ public class RachioHttp {
      * @param key Rachio API Access token (see Web UI)
      * @throws Exception
      */
-    public RachioHttp(final String key) throws RachioHttpException {
+    public RachioHttp(final String key) throws RachioApiException {
         apikey = key;
     }
 
@@ -64,7 +57,7 @@ public class RachioHttp {
      * @return RachioApiResult including GET response, http code etc.
      * @throws Exception
      */
-    public RachioApiResult httpGet(String url, String urlParameters) throws RachioHttpException {
+    public RachioApiResult httpGet(String url, String urlParameters) throws RachioApiException {
         return httpRequest(HTTP_METHOD_GET, url, urlParameters, null);
     }
 
@@ -76,7 +69,7 @@ public class RachioHttp {
      * @return RachioApiResult including GET response, http code etc.
      * @throws Exception
      */
-    public RachioApiResult httpPut(String url, String putData) throws RachioHttpException {
+    public RachioApiResult httpPut(String url, String putData) throws RachioApiException {
         return httpRequest(HTTP_METHOD_PUT, url, null, putData);
     }
 
@@ -88,7 +81,7 @@ public class RachioHttp {
      * @return RachioApiResult including GET response, http code etc.
      * @throws Exception
      */
-    public RachioApiResult httpPost(String url, String postData) throws RachioHttpException {
+    public RachioApiResult httpPost(String url, String postData) throws RachioApiException {
         return httpRequest(HTTP_METHOD_POST, url, null, postData);
     }
 
@@ -100,7 +93,7 @@ public class RachioHttp {
      * @return RachioApiResult including GET response, http code etc.
      * @throws Exception if something went wrong (e.g. unable to connect)
      */
-    public RachioApiResult httpDelete(String url, String urlParameters) throws RachioHttpException {
+    public RachioApiResult httpDelete(String url, String urlParameters) throws RachioApiException {
         return httpRequest(HTTP_METHOD_DELETE, url, urlParameters, null);
     }
 
@@ -113,10 +106,10 @@ public class RachioHttp {
      * @throws Exception
      */
     protected RachioApiResult httpRequest(String method, String url, String urlParameters, String reqDatas)
-            throws RachioHttpException {
+            throws RachioApiException {
 
+        RachioApiResult result = new RachioApiResult();
         try {
-            RachioApiResult result = new RachioApiResult();
             apiCalls++;
 
             URL location = null;
@@ -168,7 +161,7 @@ public class RachioHttp {
                 String message = MessageFormat.format(
                         "RachioHttp: Error sending HTTP {0} request to {2} - http response code={2}",
                         request.getRequestMethod(), url, result.responseCode);
-                throw new RachioHttpException(message);
+                throw new RachioApiException(message, result);
             }
 
             String inputLine;
@@ -181,8 +174,8 @@ public class RachioHttp {
             logger.trace("RachioHttp: {} {} - Response='{}'", request.getRequestMethod(), url, result.resultString);
 
             return result;
-        } catch (Exception e) {
-            throw new RachioHttpException(e.getMessage());
+        } catch (Throwable e) {
+            throw new RachioApiException(e.toString(), result, e);
         }
     }
 

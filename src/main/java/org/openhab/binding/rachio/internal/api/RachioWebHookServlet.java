@@ -79,21 +79,14 @@ public class RachioWebHookServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
         String data = inputStreamToString(request);
         try {
-            // Fix malformed API v3 Event JSON
-            data = data.replace("\"{", "{");
-            data = data.replace("}\"", "}");
-            data = data.replace("\\", "");
-            data = data.replace("\"?\"", "'?'"); // fix json for"summary" : "<Device> has turned off and back on. This
-                                                 // is usually not a problem. If power cycles continue, tap "?" above to
-                                                 // contact Rachio Support.",
-
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
             }
             String path = request.getRequestURI();
-            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}, {})", ipAddress, request.getRemotePort(), path,
-                    request.getRemoteHost(), request.getProtocol());
+
+            logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}:{}, {})", ipAddress, request.getRemotePort(), path,
+                    request.getRemoteHost(), request.getServerPort(), request.getProtocol());
             if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
                 logger.error("RachioWebHook: Invalid request received - path = {}", path);
                 return;
@@ -106,6 +99,16 @@ public class RachioWebHookServlet extends HttpServlet {
             }
 
             if (data != null) {
+                // Fix malformed API v3 Event JSON
+                data = data.replace("\"{", "{");
+                data = data.replace("}\"", "}");
+                data = data.replace("\\", "");
+                data = data.replace("\"?\"", "'?'"); // fix json for"summary" : "<Device> has turned off and back on.
+                                                     // This
+                                                     // is usually not a problem. If power cycles continue, tap "?"
+                                                     // above to
+                                                     // contact Rachio Support.",
+
                 logger.trace("RachioWebHook: Data='{}'", data);
                 RachioEvent event = gson.fromJson(data, RachioEvent.class);
                 if ((event != null) && (rachioHandlerFactory != null)) {

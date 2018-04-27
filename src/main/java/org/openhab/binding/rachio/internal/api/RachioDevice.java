@@ -48,10 +48,14 @@ public class RachioDevice extends RachioCloudDevice {
     public RachioDevice(RachioCloudDevice device) {
         try {
             RachioApi.copyMatchingFields(device, this);
-            zoneList = new HashMap<String, RachioZone>(); // discard current list
-            for (int i = 0; i < device.zones.size(); i++) {
-                RachioCloudZone zone = device.zones.get(i);
-                zoneList.put(zone.id, new RachioZone(zone, getThingID()));
+            logger.trace("RachioDevice: Adding ddevice '{}' (id='{}', model='{}', on={}, status={}, deleted={})",
+                    device.name, device.id, device.model, device.on, device.status, device.deleted);
+            if (!device.deleted) {
+                zoneList = new HashMap<String, RachioZone>(); // discard current list
+                for (int i = 0; i < device.zones.size(); i++) {
+                    RachioCloudZone zone = device.zones.get(i);
+                    zoneList.put(zone.id, new RachioZone(zone, getThingID()));
+                }
             }
         } catch (Exception e) {
             logger.error("RachioDevice: Unable to initialize '{}': {}", device.name, e.getMessage());

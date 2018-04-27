@@ -13,6 +13,8 @@ package org.openhab.binding.rachio.internal.api;
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,8 +24,6 @@ import java.util.Map;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.internal.api.RachioEvent.RachioApiResult;
-import org.openhab.binding.rachio.internal.api.RachioHttp.RachioHttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +37,142 @@ import com.google.gson.Gson;
 
 public class RachioApi {
     private static final Logger logger = LoggerFactory.getLogger(RachioApi.class);
+
+    public static class RachioApiResult {
+        private final Logger logger = LoggerFactory.getLogger(RachioApiResult.class);
+
+        public String requestMethod = "";
+        public String url = "";
+        public String apikey = "";
+        public Integer responseCode = 0;
+        public String resultString = "";
+
+        public Integer apiCalls = 0;
+        public Integer rateLimit = 0;
+        public Integer rateRemaining = 0;
+        public String rateReset = "";
+
+        public void setRateLimit(int rateLimit, int rateRemaining, String rateReset) {
+            this.rateLimit = rateLimit;
+            this.rateRemaining = rateRemaining;
+            this.rateReset = rateReset;
+        }
+
+        public void setRateLimit(String rateLimit, String rateRemaining, String rateReset) {
+            if (rateLimit != null) {
+                this.rateLimit = Integer.parseInt(rateLimit);
+            }
+            if (rateRemaining != null) {
+                this.rateRemaining = Integer.parseInt(rateRemaining);
+            }
+            if (rateReset != null) {
+                this.rateReset = rateReset;
+            }
+
+            if ((this.rateLimit == 0) || (this.rateRemaining == 0)) {
+                return;
+            }
+
+            if (isRateLimitCritical()) {
+                logger.error(
+                        "RachioApi: Remaing number of API calls is getting critical: limit={}, remaining={}, reset at {}",
+                        rateLimit, rateRemaining, rateReset);
+                return;
+            }
+            if (isRateLimitWarning()) {
+                logger.info(
+                        "RachioApi: Remaing number of remaining API calls is low: limit={}, remaining={}, reset at {}",
+                        rateLimit, rateRemaining, rateReset);
+                return;
+            }
+
+            logger.trace("RachioApi: Remaing number of API: limit={}, remaining={}, reset at {}", rateLimit,
+                    this.rateRemaining, this.rateReset);
+        }
+
+        public boolean isRateLimitWarning() {
+            return (rateRemaining > 0) && (rateRemaining < RACHIO_RATE_LIMIT_WARNING);
+        }
+
+        public boolean isRateLimitCritical() {
+            return (rateRemaining > 0) && (rateRemaining <= RACHIO_RATE_LIMIT_CRITICAL);
+        }
+
+        public boolean isRateLimitBlocked() {
+            return (rateRemaining > 0) && (rateRemaining <= RACHIO_RATE_LIMIT_BLOCK);
+        }
+    }
+
+    /**
+     * RachioApiException
+     *
+     * @author Markus Michels (markus7017) - Initial contribution
+     */
+    public static class RachioApiException extends Exception {
+        private static final long serialVersionUID = -2579498702258574787L;
+        private RachioApiResult apiResult = new RachioApiResult();
+        private Throwable e = null;
+
+        public RachioApiException(String message) {
+            super(message);
+        }
+
+        public RachioApiException(String message, Throwable throwable) {
+            super(message, throwable);
+            e = throwable;
+        }
+
+        public RachioApiException(String message, RachioApiResult result) {
+            super(message);
+            apiResult = result;
+        }
+
+        public RachioApiException(String message, RachioApiResult result, Throwable throwable) {
+            super(message);
+            apiResult = result;
+            e = throwable;
+        }
+
+        public RachioApiResult getApiResult() {
+            return apiResult;
+        }
+
+        @Override
+        public String getMessage() {
+            return super.getMessage();
+        }
+
+        @Override
+        public String toString() {
+            String message = super.getMessage();
+            if (e != null) {
+                if (e.getClass() == UnknownHostException.class) {
+                    String[] string = message.split(": "); // java.net.UnknownHostException: api.rach.io
+                    message = MessageFormat.format("Unable to connect to {0} (unknown host / internet connection down)",
+                            string[1]);
+                } else if (e.getClass() == MalformedURLException.class) {
+                    message = MessageFormat.format("Invalid URL: '{0}'", message);
+                } else {
+                    message = MessageFormat.format("'{0}' ({1}", e.toString(), e.getMessage());
+                }
+            } else {
+                message = MessageFormat.format("'{0}' ({1})", super.getClass().toString(), super.getMessage());
+            }
+
+            String url = !apiResult.url.isEmpty()
+                    ? MessageFormat.format(", {0} {1}, http code={2}", apiResult.requestMethod, apiResult.url,
+                            apiResult.responseCode)
+                    : "";
+            String rateLimit = apiResult.rateLimit > 0
+                    ? MessageFormat.format(", apiCalls={0}, rateLimit={1} of {2}", apiResult.apiCalls,
+                            apiResult.rateRemaining, apiResult.rateLimit)
+                    : "";
+            String resultString = !apiResult.resultString.isEmpty()
+                    ? MessageFormat.format(", result = '{0}'", apiResult.resultString)
+                    : "";
+            return MessageFormat.format("Exception: {0}{1}{2}{3}", message, url, rateLimit, resultString);
+        }
+    }
 
     protected String apikey = "";
     protected String personId = "";
@@ -106,20 +242,16 @@ public class RachioApi {
     }
 
     public boolean initialize(String apikey, ThingUID bridgeUID) throws RachioApiException {
-        try {
-            this.apikey = apikey;
-            httpApi = new RachioHttp(this.apikey);
-            if (initializePersonId() && initializeDevices(bridgeUID) && initializeZones()) {
-                logger.trace("Rachio API initialized");
-                return true;
-            }
-
-            httpApi = null;
-            logger.error("RachioApi.initialize(): API initialization failed!");
-            return false;
-        } catch (RachioHttpException e) {
-            throw new RachioApiException(e.getMessage());
+        this.apikey = apikey;
+        httpApi = new RachioHttp(this.apikey);
+        if (initializePersonId() && initializeDevices(bridgeUID) && initializeZones()) {
+            logger.trace("Rachio API initialized");
+            return true;
         }
+
+        httpApi = null;
+        logger.error("RachioApi.initialize(): API initialization failed!");
+        return false;
     } // initialize()
 
     public HashMap<String, RachioDevice> getDevices() {
@@ -160,7 +292,7 @@ public class RachioApi {
         return null;
     } // getDevByUID()
 
-    private Boolean initializePersonId() throws RachioApiException, RachioHttpException {
+    private Boolean initializePersonId() throws RachioApiException, RachioApiException {
         if (!personId.isEmpty()) {
             logger.trace("RachioApi: Using cached personId ('{}').", personId);
             return true;
@@ -188,92 +320,54 @@ public class RachioApi {
         return info;
     }
 
-    public Boolean stopWatering(String deviceId) throws Exception {
-        try {
-            httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_STOP, "{ \"id\" : \"" + deviceId + "\" }");
-            logger.debug("Watering stopped for device '{}'", deviceId);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_DEV_PUT_STOP, e.getMessage());
-        }
-        return false;
+    public void stopWatering(String deviceId) throws RachioApiException {
+        logger.debug("RachioApi. Stop watering for device '{}'", deviceId);
+        httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_STOP, "{ \"id\" : \"" + deviceId + "\" }");
     } // stopWatering()
 
-    public Boolean enableDevice(String deviceId) throws Exception {
-        try {
-            httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_ON, "{ \"id\" : \"" + deviceId + "\" }");
-            logger.debug("RachioApi: Device '{}' enabled.", deviceId);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_DEV_PUT_ON, e.getMessage());
-        }
-        return false;
+    public void enableDevice(String deviceId) throws RachioApiException {
+        logger.debug("RachioApi: Enable device '{}'.", deviceId);
+        httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_ON, "{ \"id\" : \"" + deviceId + "\" }");
     } // enableDevice
 
-    public Boolean disableDevice(String deviceId) throws Exception {
-        try {
-            httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_OFF, "{ \"id\" : \"" + deviceId + "\" }");
-            logger.debug("RachioApi: Device '{}' disabled.", deviceId);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_DEV_PUT_OFF, e.getMessage());
-        }
-        return false;
+    public void disableDevice(String deviceId) throws RachioApiException {
+        logger.debug("RachioApi: Disable device '{}'.", deviceId);
+        httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_OFF, "{ \"id\" : \"" + deviceId + "\" }");
     } // disableDevice
 
-    public Boolean rainDelay(String deviceId, Integer delay) throws Exception {
-        try {
-            httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_RAIN_DELAY,
-                    "{ \"id\" : \"" + deviceId + "\", \"durartion\" : " + delay + " }");
-            logger.debug("RachioApi: Rain Delay for Device '{}' enabled.", deviceId);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_DEV_PUT_RAIN_DELAY, e.getMessage());
-        }
-        return false;
+    public void rainDelay(String deviceId, Integer delay) throws RachioApiException {
+        logger.debug("RachioApi: Start dain relay for device '{}'.", deviceId);
+        httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_RAIN_DELAY,
+                "{ \"id\" : \"" + deviceId + "\", \"durartion\" : " + delay + " }");
     } // rainDelay
 
-    public boolean runMultilpeZones(String zoneListJson) {
-        try {
-            httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_MULTIPLE_START, zoneListJson);
-            logger.debug("RachioApi: Multiple zones started started.");
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_ZONE_PUT_MULTIPLE_START, e.getMessage());
-        }
-        return false;
+    public void runMultilpeZones(String zoneListJson) throws RachioApiException {
+        logger.debug("RachioApi: Start multiple zones '{}'.", zoneListJson);
+        httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_MULTIPLE_START, zoneListJson);
     } // startZone()
 
-    public boolean runZone(String zoneId, int duration) {
-        try {
-            logger.debug("RachioApi: Start zone '{}' for {} sec.", zoneId, duration);
-            httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_START,
-                    "{ \"id\" : \"" + zoneId + "\", \"duration\" : " + duration + " }");
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: Running zone '{}' for {}sec failed: {}", zoneId, duration, e.getMessage());
-        }
-        return false;
+    public void runZone(String zoneId, int duration) throws RachioApiException {
+        logger.debug("RachioApi: Start zone '{}' for {} sec.", zoneId, duration);
+        httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_START,
+                "{ \"id\" : \"" + zoneId + "\", \"duration\" : " + duration + " }");
     } // startZone()
 
-    public Boolean getDeviceInfo(String deviceId) throws Exception {
-        try {
-            httpApi.httpGet(APIURL_BASE + APIURL_GET_DEVICE + "/" + deviceId, null);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_GET_DEVICE, e.getMessage());
-        }
-        return false;
+    public void getDeviceInfo(String deviceId) throws RachioApiException {
+        httpApi.httpGet(APIURL_BASE + APIURL_GET_DEVICE + "/" + deviceId, null);
     } // getDeviceInfo
 
-    public boolean registerWebHook(String deviceId, String callbackUrl, String externalId, Boolean clearAllCallbacks) {
+    public void registerWebHook(String deviceId, String callbackUrl, String externalId, Boolean clearAllCallbacks)
+            throws RachioApiException {
         // first check/delete existing webhooks
+        logger.debug("RachioApi: Register webhook, url={}, externalId={}, clearAllCallbacks={}", callbackUrl,
+                externalId, clearAllCallbacks.toString());
 
         String json = "";
         try {
             json = httpApi.httpGet(APIURL_BASE + APIURL_DEV_QUERY_WEBHOOK + "/" + deviceId + "/webhook",
                     null).resultString; // throws
             logger.debug("RachioApi: Registered webhooks for device '{}': {}", deviceId, json);
+            logger.trace("RachioWebHook: Registered WebHooks - JSON='{}'", json);
             json = "{\"webhooks\":" + json + "}";
             Gson gson = new Gson();
             RachioApiWebHookList list = gson.fromJson(json, RachioApiWebHookList.class);
@@ -286,66 +380,53 @@ public class RachioApi {
                     httpApi.httpDelete(APIURL_BASE + APIURL_DEV_DELETE_WEBHOOK + "/" + whe.id, null);
                 }
             }
-
         } catch (Exception e) {
             logger.debug("RachioApi: Deleting WebHook(s); failed: {}, JSON='{}'", e.getMessage(), json);
         }
 
-        try {
-            // {
-            // "device":{"id":"2a5e7d3c-c140-4e2e-91a1-a212a518adc5"},
-            // "externalId" : "external company ID",
-            // "url":"https://www.mydomain.com/another_webhook",
-            // "eventTypes":[{"id":"1"},{"id":"2"}]
-            // }
-            //
-            logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
-            String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
-                    + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
-                    + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""
-                    + WEATHER_INTELLIGENCE + "\"}, " + "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " + "{\"id\" : \""
-                    + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
-                    + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_DELTA + "\"} " + "] }";
-            httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi: {} failed: {}", APIURL_GET_DEVICE, e.getMessage());
-        }
-        return false;
+        // {
+        // "device":{"id":"2a5e7d3c-c140-4e2e-91a1-a212a518adc5"},
+        // "externalId" : "external company ID",
+        // "url":"https://www.mydomain.com/another_webhook",
+        // "eventTypes":[{"id":"1"},{"id":"2"}]
+        // }
+        //
+        logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
+        String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
+                + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
+                + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""
+                + WEATHER_INTELLIGENCE + "\"}, " + "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " + "{\"id\" : \""
+                + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
+                + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_DELTA + "\"} " + "] }";
+        httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
     }
 
     // ------------ internal stuff
 
-    private Boolean initializeDevices(ThingUID BridgeUID) {
+    private Boolean initializeDevices(ThingUID BridgeUID) throws RachioApiException {
         String json = "";
-        try {
-            if (httpApi == null) {
-                logger.debug("RachioApi.initializeDevices: API not initialized");
-                return false;
-            }
-            json = httpApi.httpGet(APIURL_BASE + APIURL_GET_PERSONID + "/" + personId, null).resultString;
-            logger.trace("RachioApi: Initialize from JSON='{}'", json);
-
-            Gson gson = new Gson();
-            RachioCloudStatus cloudStatus = gson.fromJson(json, RachioCloudStatus.class);
-            userName = cloudStatus.username;
-            fullName = cloudStatus.fullName;
-            email = cloudStatus.email;
-
-            deviceList = new HashMap<String, RachioDevice>(); // discard current list
-            for (int i = 0; i < cloudStatus.devices.size(); i++) {
-                RachioCloudDevice device = cloudStatus.devices.get(i);
-                if (!device.deleted) {
-                    deviceList.put(device.id, new RachioDevice(device));
-                    logger.trace("RachioApi: Device '{}' initialized, {} zones.", device.name, device.zones.size());
-                }
-            }
-            return true;
-        } catch (Exception e) {
-            logger.error("RachioApi.initializeDevices: Exception: {}; JSON='{}'", e.getMessage(), json);
+        if (httpApi == null) {
+            logger.debug("RachioApi.initializeDevices: httpAPI not initialized");
+            return false;
         }
-        logger.error("RachioApi.initializeDevices: Initialization failed: JSON='{}'", json);
-        return false;
+        json = httpApi.httpGet(APIURL_BASE + APIURL_GET_PERSONID + "/" + personId, null).resultString;
+        logger.trace("RachioApi: Initialize from JSON='{}'", json);
+
+        Gson gson = new Gson();
+        RachioCloudStatus cloudStatus = gson.fromJson(json, RachioCloudStatus.class);
+        userName = cloudStatus.username;
+        fullName = cloudStatus.fullName;
+        email = cloudStatus.email;
+
+        deviceList = new HashMap<String, RachioDevice>(); // discard current list
+        for (int i = 0; i < cloudStatus.devices.size(); i++) {
+            RachioCloudDevice device = cloudStatus.devices.get(i);
+            if (!device.deleted) {
+                deviceList.put(device.id, new RachioDevice(device));
+                logger.trace("RachioApi: Device '{}' initialized, {} zones.", device.name, device.zones.size());
+            }
+        }
+        return true;
     } // initializeDevices()
 
     public Boolean initializeZones() {

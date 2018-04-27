@@ -35,7 +35,7 @@ If the apikey is configured in the rachio.cfg file a bridge thing is created dyn
 ```
 # Configuration for the Rachio Binding
 # apikey=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx
-# callbackUrl="https://mydomain.com:myport/rachio/webhook
+# callbackUrl="http://mydomain.com:myport/rachio/webhook
 # clearAllCallbacks=false
 # pollingInterval=120
 # defaultRuntime=120
@@ -75,7 +75,7 @@ Important: Please make sure to use an interval > 90sec. Rachio has a reshhold fo
 <tr>
 <td><b>callbackUrl</b></td>
 <td>Enable event interface:<p/>
-The Rachio Cloud allows receiving events. For this a REST interface will be provided by the binding (<server>:<port>:/rachio/webhook). However, this requires to open a port to the Internet. This can be done by a simple port forwarding from an external port (e.g. 50043) to you OH device. Please make sure to us "https://", so the transport layer is encrypted.<p/>
+The Rachio Cloud allows receiving events. For this a REST interface will be provided by the binding (<server>:<port>:/rachio/webhook). However, this requires to open a port to the Internet. This can be done by a simple port forwarding from an external port (e.g. 50043) to you OH device. Please make sure to us "http://", so the transport layer is encrypted (https IS NOT YET SUPPORTED).<p/>
 Please make sure that notifications are enabled if you want to use the event interface. Go to the Rachio Web App->Accounts Settings->Notifications.<p/></td>
 </tr>
 
@@ -123,7 +123,7 @@ _Here you should provide information about available channel types, what their m
 conf/things/rachio.things
 
 ```
-Bridge rachio:cloud:1 [ apikey="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx", pollingInterval=180, defaultRuntime=120, callbackUrl="https://mydomain.com:50043/rachio/webhook", clearAllCallbacks=true  ]
+Bridge rachio:cloud:1 [ apikey="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx", pollingInterval=180, defaultRuntime=120, callbackUrl="http://mydomain.com:50043/rachio/webhook", clearAllCallbacks=true  ]
 {
 }
 ```
@@ -144,6 +144,7 @@ The router configuration has to be done manually (supporting UPnP-based auto-con
   you need to included this in the thing definition (callbackUrl=xxx), see above
 
 If events are not received (e.g. no events are shown after starting / stopping a zone) the most common reasons is a mis-configuration of the port forwarding. Check openHAB.log, no events are received if you don't see RachioEvent messages. Do the following steps to verify the setup
+- make suire to use http instead of https for the moment - https IS NOT supported at the moment
 - run a browser and open URL http://127.0.0.1:8080/rachio/webhook - you should get a white screen (no error message) and should the a message in the OH log that the binding is not able to process the request.
 - ping your domain and make sure that it returns the external IP of your router
 - open URL http://<your domain>:<port>/rachio/webhook - you should see the same page rather than an error

@@ -36,65 +36,6 @@ public class RachioZone extends RachioCloudZone {
     protected RachioZoneHandler thingHandler;
     protected String uniqueId = "";
 
-    // RachioApi: Zone (click expand)
-    /*
-     * {
-     * "id":"dd269f3e-abde-4303-8a29-fa49508818a2",
-     * "zoneNumber":7,"name":"Zone 7","enabled":false,
-     * "customNozzle":
-     * {"name":"Fixed Spray Head",
-     * "imageUrl":"https://s3-us-west-2.amazonaws.com/rachio-api-icons/nozzle/fixed_spray.png",
-     * "category":"FIXED_SPRAY_HEAD",
-     * "inchesPerHour":1.5},
-     * "customSoil":
-     * {"createDate":1494473341401,
-     * "lastUpdateDate":1494473341401,
-     * "id":"441a1938-68cc-44b2-9669-99975edd773f",
-     * "name":"Loam",
-     * "imageUrl":"https://s3-us-west-2.amazonaws.com/rachio-api-icons/soil/loam.png",
-     * "category":"LOAM",
-     * "infiltrationRate":0.35,
-     * "editable":false,
-     * "percentAvailableWater":0.7
-     * },
-     * "customSlope":
-     * {"name":"Flat",
-     * "imageUrl":"https://s3-us-west-2.amazonaws.com/rachio-api-icons/slope/flat.png",
-     * "variance":"ZERO_THREE","sortOrder":0
-     * },
-     * "customCrop":
-     * {"name":"Cool Season Grass",
-     * "imageUrl":"https://s3-us-west-2.amazonaws.com/rachio-api-icons/crop/cool_season_grass.png",
-     * "coefficient":0.8
-     * },
-     * "customShade":
-     * {"name":"Lots of sun",
-     * "description":"6-8 hours of sun",
-     * "imageUrl":"https://s3-us-west-2.amazonaws.com/rachio-api-icons/shade/lots_of_sun.png",
-     * "exposure":1.0
-     * },
-     * "availableWater":0.17,
-     * "rootZoneDepth":6.0,
-     * "managementAllowedDepletion":0.5,
-     * "efficiency":0.8,
-     * "yardAreaSquareFeet":500,
-     * "imageUrl":"http://media.rach.io/images/zone/default/default_zone.jpg",
-     * "scheduleDataModified":false,
-     * "fixedRuntime":0,
-     * "saturatedDepthOfWater":0.56,
-     * "depthOfWater":0.51,
-     * "maxRuntime":10800,
-     * "runtimeNoMultiplier":1391,
-     * "wateringAdjustmentRuntimes":
-     * {"1":2086,
-     * "2":1739,
-     * "3":1391,
-     * "4":1043,
-     * "5":695
-     * },
-     * "runtime":1391
-     * }
-     */
     public String lastEvent = "";
     protected int startRunTime = 0;
 
@@ -104,12 +45,12 @@ public class RachioZone extends RachioCloudZone {
      * @param fromObj the object to copy from
      * @param toObj the object to copy to
      */
-
     public RachioZone(RachioCloudZone zone, String uniqueId) {
         try {
             RachioApi.copyMatchingFields(zone, this);
             this.uniqueId = uniqueId;
-            logger.trace("RachioZone: Zone '{}' (number={}, id={}) initialized.", zone.name, zone.zoneNumber, zone.id);
+            logger.trace("RachioZone: Zone '{}' (number={}, id={}, enable={}) initialized.", zone.name, zone.zoneNumber,
+                    zone.id, zone.enabled);
         } catch (Exception e) {
             logger.error("RachioZone: Unable to initialized: {}", e.getMessage());
         }
@@ -165,6 +106,7 @@ public class RachioZone extends RachioCloudZone {
     }
 
     public String getThingID() {
+        // build thing name like rachio_zone_1_74C63B174B7B_7
         return uniqueId + "-" + zoneNumber;
     }
 
@@ -210,5 +152,4 @@ public class RachioZone extends RachioCloudZone {
     public boolean isEnable() {
         return enabled;
     }
-
 } // class RachioZone
