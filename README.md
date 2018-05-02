@@ -170,4 +170,78 @@ For now the following security pattern is implemented:
 
 https is on the list, but not implemented yet.
 
+<hr/>
 
+## For added security use an secure webhook link leveraging Apaches SSL,Proxy and Rewrite
+- This setup will allow for encryption of webhook url call by using a url such as https://example.com:50000/rachio/webhook 
+- It is important to note that the encryption is between the Rachio servers and the server that will be performing the proxy in your network. The traffic between your apache server running reverse proxy, and openhab will not be encrypted.
+- This example will be using Apache virtualhosts although it is not required.
+
+### Requirements
+- Must have an Apache 2 webserver to proxy your requests ( NGINX can probably be used but will not be covered in this example)
+- Modules that must be installed in Apache 2 are mod_ssl and rewrite and proxy.
+- A NAT rule on your firewall allowing requests from the outside of your network hitting port 50000 to be forwarded to your Apache server.
+- A registered domain name with a static IP or a setup where your dynamic IP is automatically updated. ( This will not be covered here)
+- A valid secure certificate. I use certbot to configure my letsencrypt certificat which is free, works amazingly well, and automatically updates when the certificate is about to expire. For details visit https://certbot.eff.org/
+
+### Configuration
+- Decide on a port in the range between 1024 and 65535,for this example we will use port 50000 as shown above.
+Let's configure apache to listen for this port using the vi editor. By default your webserver will already be listening on port 80. If you have a previous SSL setup it will also be listening on port 443. Notice how the SSL ports must be in the ssl_module and gnutls sections. You will be adding your port 50000 there and append the https to the end.
+
+sudo vi /etc/apache2/ports.conf
+
+```
+Listen 80
+
+<IfModule ssl_module>
+        Listen 443
+        Listen 50000 https
+</IfModule>
+
+<IfModule mod_gnutls.c>
+        Listen 443
+        Listen 50000 https
+</IfModule>
+```
+Save and close the file
+
+Now you must create an apache configuration file. In this example we use "www.example.com.https.conf" as the file name. Note the configuration below will only accept valid url requests that must be in the following format https://example.com:50000/rachio/webhook. If the url does not match, the webserver will redirect to https://www.openhab.org in this case but you can redirect to the url of your choice. If the URL does match, the apache server will proxy the request to the openhab server. In this case OpenHAb is running on 192.168.1.10 and using port 8080. Let's move on to the configuration.
+
+cd /etc/apache2/sites-available
+sudo vim www.example.com.https.conf
+
+```
+<IfModule mod_ssl.c>
+
+<VirtualHost *:50000>
+        ServerName www.example.com
+
+        <Location /rachio/webhook>
+                Order Allow,Deny
+                Allow from all
+        </Location>
+
+        Include /etc/letsencrypt/options-ssl-apache.conf
+        SSLCertificateFile /etc/letsencrypt/live/example.com/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/example.com/privkey.pem
+
+        ProxyPreserveHost On
+        ProxyPass      /rachio/webhook http://192.168.1.10:8080/rachio/webhook
+        ProxyPassReverse /rachio/webhook http://192.168.1.10:8080/rachio/webhook
+
+        RewriteEngine on
+        RewriteCond %{REQUEST_URI} !^/rachio/webhook
+        RewriteRule ^(.*)$ https://www.openhab.org// [L,R=301]
+
+</VirtualHost>
+
+</IfModule>
+```
+
+To activate the new configuration, you need to run:
+
+```
+systemctl reload apache2
+ ```
+ 
+If you see no errors on reload, everything should be working so go ahead and make a request from outside your network to your URL... https://example.com:50000/rachio/webhook You should see a white screen just as you do without the https. You cnan now also try a request to https://example.com:50000/anythinghere and it should redirect to the URL of your choice.
