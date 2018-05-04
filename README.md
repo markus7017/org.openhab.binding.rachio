@@ -244,4 +244,6 @@ To activate the new configuration, you need to run:
 systemctl reload apache2
  ```
  
-If you see no errors on reload, everything should be working so go ahead and make a request from outside your network to your URL... https://example.com:50000/rachio/webhook You should see a white screen just as you do without the https. You cnan now also try a request to https://example.com:50000/anythinghere and it should redirect to the URL of your choice.
+If you see no errors on reload, everything should be working so go ahead and make a request from outside your network to your URL... https://example.com:50000/rachio/webhook You should see a white screen just as you do without the https. 
+
+You can also try a request to https://example.com:50000/anythinghere and it should redirect to the URL of your choice when it doesnt hit the webhook URL. This is just to distract bad guys from trying random urls.
