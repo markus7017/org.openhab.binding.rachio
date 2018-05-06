@@ -56,7 +56,7 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     @Override
     @Activate
     protected void activate(Map<String, Object> configProperties) {
-        logger.debug("EntertainTV: Activate HandlerFactory, configurarion (services/binding." + BINDING_ID + ".cfg):");
+        logger.debug("Rachio: Activate HandlerFactory, configurarion (services/binding." + BINDING_ID + ".cfg):");
         bindingConfig.updateConfig(configProperties);
     }
 

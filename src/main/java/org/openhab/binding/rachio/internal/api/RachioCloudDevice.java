@@ -28,7 +28,7 @@ class RachioCloudDevice {
     public ArrayList<RachioCloudScheduleRule> scheduleRules = new ArrayList<>(); // "scheduleRules":[]
     public boolean cycleSoak = false; // "cycleSoak":false}
     public String serialNumber = ""; // "serialNumber":"VR0547710",
-    public int rainDelayExpirationDate = 0; // "rainDelayExpirationDate":0,
+    public long rainDelayExpirationDate = 0; // "rainDelayExpirationDate":0,
     public String macAddress = ""; // "macAddress":"XXXXXXXXXXXX",
     public boolean on = true; // "on":true,
     public ArrayList<RachioCloudScheduleRule> flexScheduleRules = new ArrayList<>(); // "flexScheduleRules":[],
