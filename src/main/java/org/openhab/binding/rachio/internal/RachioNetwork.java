@@ -22,9 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiResult;
-import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiException;
-
 /**
  * RachioNetwork: Implement network related functions
  *

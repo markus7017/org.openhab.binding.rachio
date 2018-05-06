@@ -21,7 +21,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.MessageFormat;
 
-import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiException;
 import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;;
