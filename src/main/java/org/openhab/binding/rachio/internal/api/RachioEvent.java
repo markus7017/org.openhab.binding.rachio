@@ -158,45 +158,4 @@ public class RachioEvent {
         // eventDatas = new JsonArray();
     }
 
-    // public void setEventParms() {
-    /*
-     * No longer used for APIv3
-     *
-     * try {
-     *
-     * eventParms = new HashMap<String, String>();
-     * deltaProperties = new HashMap<String, RachioEventProperty>();
-     * for (int i = 0; i < eventDatas.size(); i++) {
-     * JsonElement jElement = eventDatas.get(i);
-     * JsonObject jObject = jElement.getAsJsonObject();
-     * String key = jObject.get("key").getAsString();
-     * JsonElement convertedValue = jObject.get("convertedValue");
-     * if (convertedValue != null) {
-     * String value = convertedValue.getAsString();
-     * eventParms.put(key, value);
-     * }
-     * JsonElement deltaContainer = jObject.get("deltaContainer");
-     * if (type.equals("DELTA") && (deltaContainer != null)) {
-     * JsonObject deltasObject = deltaContainer.getAsJsonObject();
-     * JsonElement deltas = deltasObject.get("deltas");
-     * if (deltas != null) {
-     * JsonArray deltaArray = deltas.getAsJsonArray();
-     * for (int dc = 0; dc < deltaArray.size(); dc++) {
-     * JsonElement jeProperty = deltaArray.get(dc);
-     * JsonObject joProperty = jeProperty.getAsJsonObject();
-     * RachioEventProperty evProperty = new RachioEventProperty();
-     * evProperty.propertyName = joProperty.get("propertyName").getAsString();
-     * evProperty.oldValue = joProperty.get("oldValue").getAsString();
-     * evProperty.newValue = joProperty.get("newValue").getAsString();
-     * deltaProperties.put(evProperty.propertyName, evProperty);
-     * }
-     * }
-     * }
-     * }
-     * } catch (Exception e) {
-     * logger.error("RachioEvent: Unable process parms for event '{}': {}", type, e.getMessage());
-     * }
-     */
-    // } // setEventParms()
-
 } // class RachioEvent
