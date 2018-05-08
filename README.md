@@ -217,6 +217,8 @@ hostname
 
 ### Configuration
 
+sudo nano /etc/nginx/sites-enabled/openhab
+
 ```
 server {
     listen                          80;
