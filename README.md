@@ -140,7 +140,7 @@ The router configuration has to be done manually (supporting UPnP-based auto-con
 - you need to create a forward from a user defined port exposed to the Inernet to the OH ip:8080
   e.g. forward external port 50000 tcp to openHAB ip port 8080
   if the router is asking for a port range use the same values external-ip:50000-50000 -> internal_ip: 8080-8080
-- this results into the callbackUrl http://mydomain.com:50000/rachio/webhook
+- this results into the callbackUrl https://mydomain.com:50000/rachio/webhook
   you need to included this in the thing definition (callbackUrl=xxx), see above
 
 If events are not received (e.g. no events are shown after starting / stopping a zone) the most common reasons is a mis-configuration of the port forwarding. Check openHAB.log, no events are received if you don't see RachioEvent messages. Do the following steps to verify the setup
@@ -176,8 +176,7 @@ https is on the list, but not implemented yet.
 A reverse proxy setup is an optional, but important enhancement to the OH security when receiving weekhook events from the Rachio cloud. We can just expose the requested port and do a direct port forwarding, but it's way more secure to limit access to your local OH only for webhook calls (/rachio/webhook).
 
 - This setup will allow for encryption of webhook url call by using a url such as https://example.com:50000/rachio/webhook 
-- It is important to note that the encryption is between the Rachio servers and the server that will be performing the proxy in your network. The traffic between the https reverse proxy and openhab may not be encrypted (optional http or https).
-- Thie Apache example will be using Apache virtualhosts although it is not required.
+- It is important to note that the encryption is between the Rachio servers and the server that will be performing the proxy in your network. The traffic between the https reverse proxy and openhab will not be encrypted..The webhook will use https, but the reverse proxy forwards this to OH using http (you could also use https, but there is no real need).
 
 ### General requirments
 There are some pre-requisites to enable the setup. Make sure to have this running before setting up the reverse proxy.
@@ -195,9 +194,9 @@ Refer to https://docs.openhab.org/installation/security.html#nginx-openssl. This
 This is an example, which
 - provides general https access to https://<openhab-dnsname>/ using basic auth, but
 - https access to https://<openhab-dnsname>/rachio/webhook without user auth. This is important, otherwise the Rachio cloud server couldn't connect to your openhab instance and the Rachio binding.
-- the sample uses the string https setup (see https://docs.openhab.org/installation/security.html#nginx-https-security). You need to perform the additional installation steps to use this sample.
+- the sample uses strong https setup (see https://docs.openhab.org/installation/security.html#nginx-https-security). You need to perform the additional installation steps to use this sample.
 - user auth is also NOT requested when accessing openhab from your local network, see "allow    192.168.0.0/16;"
-- the section location /rachio/webhook enabled direct https access to the binding url for the weebhook
+- the section location /rachio/webhook enabled direct http access to the binding url for the weebhook
 - the sample assumes that your are running nginx and openhab on the same node using the OH standard http/https port, otherwise change http://localhost:8080/ and https://localhost:8443/rachio/webhook to your setup.
 - the sample redirects all http traffic to https. You don't need to open a http port on the firewall.
 
@@ -255,7 +254,7 @@ server {
     }
 
     location /rachio/webhook {
-        proxy_pass                            https://localhost:8443/rachio/webhook;
+        proxy_pass                            http://localhost:8080/rachio/webhook;
         proxy_set_header Host                 $http_host;
         proxy_set_header X-Real-IP            $remote_addr;
         proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
