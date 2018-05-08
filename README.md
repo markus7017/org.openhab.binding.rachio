@@ -172,23 +172,124 @@ https is on the list, but not implemented yet.
 
 <hr/>
 
-## For added security use an secure webhook link leveraging Apaches SSL,Proxy and Rewrite
-- This setup will allow for encryption of webhook url call by using a url such as https://example.com:50000/rachio/webhook 
-- It is important to note that the encryption is between the Rachio servers and the server that will be performing the proxy in your network. The traffic between your apache server running reverse proxy, and openhab will not be encrypted.
-- This example will be using Apache virtualhosts although it is not required.
+## Enhanced security for the webhook event interface - https reverse proxy
+A reverse proxy setup is an optional, but important enhancement to the OH security when receiving weekhook events from the Rachio cloud. We can just expose the requested port and do a direct port forwarding, but it's way more secure to limit access to your local OH only for webhook calls (/rachio/webhook).
 
-### Requirements
-- Must have an Apache 2 webserver to proxy your requests ( NGINX can probably be used but will not be covered in this example)
-- Modules that must be installed in Apache 2 are mod_ssl and rewrite and proxy.
+- This setup will allow for encryption of webhook url call by using a url such as https://example.com:50000/rachio/webhook 
+- It is important to note that the encryption is between the Rachio servers and the server that will be performing the proxy in your network. The traffic between the https reverse proxy and openhab may not be encrypted (optional http or https).
+- Thie Apache example will be using Apache virtualhosts although it is not required.
+
+### General requirments
+There are some pre-requisites to enable the setup. Make sure to have this running before setting up the reverse proxy.
 - A NAT rule on your firewall allowing requests from the outside of your network hitting port 50000 to be forwarded to your Apache server.
-- A registered domain name with a static IP or a setup where your dynamic IP is automatically updated. ( This will not be covered here)
-- A valid secure certificate. I use certbot to configure my letsencrypt certificat which is free, works amazingly well, and automatically updates when the certificate is about to expire. For details visit https://certbot.eff.org/
+- A registered domain name with a static IP or a setup where your dynamic IP is automatically updated (dyndns).
+- A valid secure certificate. You can use certbot to configure my letsencrypt certificat which is free, works amazingly well, and automatically updates when the certificate is about to expire. For details visit https://certbot.eff.org/
+- change the callbackUrl in your .things file to https://example.com:50000/rachio/webhook. 
+- If you need to change this url change  clearAllCallbacks=yes restart OH, revert the change and restart again. This makes sure that the latest url gets registered to the Rachio cloud, but the old one is cleared.
+
+
+### NGINX
+
+Refer to https://docs.openhab.org/installation/security.html#nginx-openssl. This will guide you step-by-step how to setup the NGINX server using https.
+
+This is an example, which
+- provides general https access to https://<openhab-dnsname>/ using basic auth, but
+- https access to https://<openhab-dnsname>/rachio/webhook without user auth. This is important, otherwise the Rachio cloud server couldn't connect to your openhab instance and the Rachio binding.
+- the sample uses the string https setup (see https://docs.openhab.org/installation/security.html#nginx-https-security). You need to perform the additional installation steps to use this sample.
+- user auth is also NOT requested when accessing openhab from your local network, see "allow    192.168.0.0/16;"
+- the section location /rachio/webhook enabled direct https access to the binding url for the weebhook
+- the sample assumes that your are running nginx and openhab on the same node using the OH standard http/https port, otherwise change http://localhost:8080/ and https://localhost:8443/rachio/webhook to your setup.
+- the sample redirects all http traffic to https. You don't need to open a http port on the firewall.
+
+#### Requirements
+
+Install nginx, make sure Apache is not installed and no other server is listening to port 80/443.
+
+```
+sudo apt-get install nginx
+```
+
+Make sure the Raspi's hostname is matching the domain name for the ceriticate:
+
+```
+hostname
+```
+
 
 ### Configuration
+
+```
+server {
+    listen                          80;
+    server_name                     example.com;
+    return 301                      https://$server_name$request_uri;
+}
+
+server {
+    listen                          443 ssl;
+    server_name                     example.com;
+    ssl_certificate                 /etc/ssl/openhab.crt;
+    ssl_certificate_key             /etc/ssl/openhab.key;
+    ssl_protocols                   TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers       on;
+    ssl_dhparam                     /etc/nginx/ssl/dhparam.pem;
+    ssl_ciphers                     ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:HIGH:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!CBC:!EDH:!kEDH:!PSK:!SRP:!kECDH;
+    ssl_session_timeout             1d;
+    ssl_session_cache               shared:SSL:10m;
+    keepalive_timeout               70;
+
+    location / {
+        proxy_pass                            http://localhost:8080/;
+        proxy_set_header Host                 $http_host;
+        proxy_set_header X-Real-IP            $remote_addr;
+        proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto    $scheme;
+
+        auth_basic                            "Username and Password Required";
+        auth_basic_user_file                  /etc/nginx/.htpasswd;
+
+        satisfy  any;
+        allow    192.168.0.0/16;
+        allow    127.0.0.1;
+        deny     all;
+    }
+
+    location /rachio/webhook {
+        proxy_pass                            https://localhost:8443/rachio/webhook;
+        proxy_set_header Host                 $http_host;
+        proxy_set_header X-Real-IP            $remote_addr;
+        proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto    $scheme;
+    }
+
+}
+```
+
+After your changed the nginx setup make sure to run
+
+```
+sudo nginx -t
+sudo service nginx restart
+systectl status nginx
+```
+
+Check the nginx log for errors:
+
+```
+cat  /var/log/nginx/error.log  
+```
+
+
+### Apache
+#### Requirements
+- Must have an Apache 2 webserver to proxy your requests
+- Modules that must be installed in Apache 2 are mod_ssl and rewrite and proxy.
+
+#### Configuration
 - Decide on a port in the range between 1024 and 65535,for this example we will use port 50000 as shown above.
 Let's configure apache to listen for this port using the vi editor. By default your webserver will already be listening on port 80. If you have a previous SSL setup it will also be listening on port 443. Notice how the SSL ports must be in the ssl_module and gnutls sections. You will be adding your port 50000 there and append the https to the end.
 
-sudo vi /etc/apache2/ports.conf
+sudo nano /etc/apache2/ports.conf
 
 ```
 Listen 80
