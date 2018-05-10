@@ -58,8 +58,8 @@ public class RachioWebHookServlet extends HttpServlet {
     @Activate
     protected void activate(Map<String, Object> config) {
         try {
-            httpService.registerServlet(WEBHOOK_PATH, this, null, httpService.createDefaultHttpContext());
-            logger.info("Started Rachio Webhook servlet at {}", WEBHOOK_PATH);
+            httpService.registerServlet(SERVLET_WEBHOOK_PATH, this, null, httpService.createDefaultHttpContext());
+            logger.info("Started Rachio Webhook servlet at {}", SERVLET_WEBHOOK_PATH);
         } catch (ServletException | NamespaceException e) {
             logger.error("Could not start Rachio Webhook servlet: {}", e.getMessage(), e);
         }
@@ -70,7 +70,7 @@ public class RachioWebHookServlet extends HttpServlet {
      */
     @Deactivate
     protected void deactivate() {
-        httpService.unregister(WEBHOOK_PATH);
+        httpService.unregister(SERVLET_WEBHOOK_PATH);
         logger.info("RachioWebHook: Servlet stopped");
     }
 
@@ -87,7 +87,7 @@ public class RachioWebHookServlet extends HttpServlet {
 
             logger.trace("RachioWebHook: Reqeust from {}:{}{} ({}:{}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getServerPort(), request.getProtocol());
-            if (!path.equalsIgnoreCase(WEBHOOK_PATH)) {
+            if (!path.equalsIgnoreCase(SERVLET_WEBHOOK_PATH)) {
                 logger.error("RachioWebHook: Invalid request received - path = {}", path);
                 return;
             }
@@ -146,8 +146,8 @@ public class RachioWebHookServlet extends HttpServlet {
     }
 
     private void setHeaders(HttpServletResponse response) {
-        response.setCharacterEncoding(WEBHOOK_CHARSET);
-        response.setContentType(WEBHOOK_APPLICATION_JSON);
+        response.setCharacterEncoding(SERVLET_WEBHOOK_CHARSET);
+        response.setContentType(SERVLET_WEBHOOK_APPLICATION_JSON);
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "POST");
         response.setHeader("Access-Control-Max-Age", "3600");
@@ -183,13 +183,4 @@ public class RachioWebHookServlet extends HttpServlet {
         this.httpService = null;
     }
 
-    public static String replace(String string, String[] toFind, String[] toReplace) {
-        if (toFind.length != toReplace.length) {
-            throw new IllegalArgumentException("Arrays must be of the same length.");
-        }
-        for (int i = 0; i < toFind.length; i++) {
-            string = string.replace(toFind[i], toReplace[i]);
-        }
-        return string;
-    }
 } // RachioWebHookServlet

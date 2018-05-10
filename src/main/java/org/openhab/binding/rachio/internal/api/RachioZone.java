@@ -48,6 +48,19 @@ public class RachioZone extends RachioCloudZone {
     public RachioZone(RachioCloudZone zone, String uniqueId) {
         try {
             RachioApi.copyMatchingFields(zone, this);
+
+            if (zone.imageUrl.substring(0, SERVLET_IMAGE_URL_BASE.length()).equalsIgnoreCase(SERVLET_IMAGE_URL_BASE)) {
+                // when trying to load the imageUrl Rachio doesn't add a ".png" and doesn't set the mime type. As a
+                // result the binding provides a servlet, which acts like a proxy. We redirect the load request to the
+                // local servlet. The serverlet loads the provided image and then writs it as binary data to the output
+                // stream with the correct mime type.
+                String uri = zone.imageUrl.substring(zone.imageUrl.lastIndexOf("/") + 1);
+                if (!uri.equals("")) {
+                    zone.imageUrl = SERVLET_IMAGE_URL_BASE + uri;
+                    logger.debug("RachioZone: imageUrl rewritten to '{}' for zone '{}'", zone.imageUrl, zone.name);
+                }
+            }
+
             this.uniqueId = uniqueId;
             logger.trace("RachioZone: Zone '{}' (number={}, id={}, enable={}) initialized.", zone.name, zone.zoneNumber,
                     zone.id, zone.enabled);

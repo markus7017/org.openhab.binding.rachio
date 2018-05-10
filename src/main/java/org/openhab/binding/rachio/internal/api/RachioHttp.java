@@ -128,8 +128,8 @@ public class RachioHttp {
             }
             request.setRequestMethod(method);
             request.setConnectTimeout(15000); // set timeout to 15 seconds
-            request.setRequestProperty("User-Agent", WEBHOOK_USER_AGENT);
-            request.setRequestProperty("Content-Type", WEBHOOK_APPLICATION_JSON);
+            request.setRequestProperty("User-Agent", SERVLET_WEBHOOK_USER_AGENT);
+            request.setRequestProperty("Content-Type", SERVLET_WEBHOOK_APPLICATION_JSON);
             logger.trace("RachioHttp[Call #{}]: Call Rachio cloud service: {} '{}')", apiCalls,
                     request.getRequestMethod(), result.url);
             if (method.equals(HTTP_METHOD_PUT) || method.equals(HTTP_METHOD_POST)) {
