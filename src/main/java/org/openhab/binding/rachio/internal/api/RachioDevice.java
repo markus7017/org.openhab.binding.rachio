@@ -45,6 +45,7 @@ public class RachioDevice extends RachioCloudDevice {
     private HashMap<String, RachioZone> zoneList = new HashMap<String, RachioZone>();
     private RachioDeviceHandler thingHandler = null;
 
+    @SuppressWarnings("unused")
     public RachioDevice(RachioCloudDevice device) {
         try {
             RachioApi.copyMatchingFields(device, this);
@@ -54,10 +55,10 @@ public class RachioDevice extends RachioCloudDevice {
                 zoneList = new HashMap<String, RachioZone>(); // discard current list
                 for (int i = 0; i < device.zones.size(); i++) {
                     RachioCloudZone zone = device.zones.get(i);
-                    if (zone.enabled) {
+                    if (true /* zone.enabled */) {
                         zoneList.put(zone.id, new RachioZone(zone, getThingID()));
                     } else {
-                        logger.info("RachioDevice: Zone '{}.{}[{}]' is disabled, skip.", device.name, zone.name,
+                        logger.trace("RachioDevice: Zone '{}.{}[{}]' is disabled, skip.", device.name, zone.name,
                                 zone.zoneNumber);
                     }
                 }
