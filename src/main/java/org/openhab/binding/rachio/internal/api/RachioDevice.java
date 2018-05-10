@@ -45,15 +45,27 @@ public class RachioDevice extends RachioCloudDevice {
     private HashMap<String, RachioZone> zoneList = new HashMap<String, RachioZone>();
     private RachioDeviceHandler thingHandler = null;
 
+    @SuppressWarnings("unused")
     public RachioDevice(RachioCloudDevice device) {
         try {
             RachioApi.copyMatchingFields(device, this);
-            zoneList = new HashMap<String, RachioZone>(); // discard current list
-            for (int i = 0; i < device.zones.size(); i++) {
-                RachioCloudZone zone = device.zones.get(i);
-                zoneList.put(zone.id, new RachioZone(zone, getThingID()));
+            logger.trace("RachioDevice: Adding ddevice '{}' (id='{}', model='{}', on={}, status={}, deleted={})",
+                    device.name, device.id, device.model, device.on, device.status, device.deleted);
+            if (!device.deleted) {
+                zoneList = new HashMap<String, RachioZone>(); // discard current list
+                for (int i = 0; i < device.zones.size(); i++) {
+                    RachioCloudZone zone = device.zones.get(i);
+                    if (true /* zone.enabled */) {
+                        zoneList.put(zone.id, new RachioZone(zone, getThingID()));
+                    } else {
+                        logger.trace("RachioDevice: Zone '{}.{}[{}]' is disabled, skip.", device.name, zone.name,
+                                zone.zoneNumber);
+                    }
+                }
             }
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             logger.error("RachioDevice: Unable to initialize '{}': {}", device.name, e.getMessage());
         }
     }

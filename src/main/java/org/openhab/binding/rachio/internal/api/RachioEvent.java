@@ -12,10 +12,9 @@
  */
 package org.openhab.binding.rachio.internal.api;
 
-import static org.openhab.binding.rachio.RachioBindingConstants.*;
-
 import java.util.HashMap;
 
+import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiResult;
 import org.openhab.binding.rachio.internal.api.RachioCloudDevice.RachioCloudNetworkSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,71 +31,6 @@ public class RachioEvent {
         public String propertyName;
         public String oldValue;
         public String newValue;
-    }
-
-    public static class RachioApiResult {
-        private final Logger logger = LoggerFactory.getLogger(RachioApiResult.class);
-
-        public String requestMethod = "";
-        public String url = "";
-        public String apikey = "";
-        public Integer responseCode = 0;
-        public String resultString = "";
-
-        public Integer apiCalls = 0;
-        public Integer rateLimit = 0;
-        public Integer rateRemaining = 0;
-        public String rateReset = "";
-
-        public void setRateLimit(int rateLimit, int rateRemaining, String rateReset) {
-            this.rateLimit = rateLimit;
-            this.rateRemaining = rateRemaining;
-            this.rateReset = rateReset;
-        }
-
-        public void setRateLimit(String rateLimit, String rateRemaining, String rateReset) {
-            if (rateLimit != null) {
-                this.rateLimit = Integer.parseInt(rateLimit);
-            }
-            if (rateRemaining != null) {
-                this.rateRemaining = Integer.parseInt(rateRemaining);
-            }
-            if (rateReset != null) {
-                this.rateReset = rateReset;
-            }
-
-            if ((this.rateLimit == 0) || (this.rateRemaining == 0)) {
-                return;
-            }
-
-            if (isRateLimitCritical()) {
-                logger.error(
-                        "RachioApi: Remaing number of API calls is getting critical: limit={}, remaining={}, reset at {}",
-                        rateLimit, rateRemaining, rateReset);
-                return;
-            }
-            if (isRateLimitWarning()) {
-                logger.info(
-                        "RachioApi: Remaing number of remaining API calls is low: limit={}, remaining={}, reset at {}",
-                        rateLimit, rateRemaining, rateReset);
-                return;
-            }
-
-            logger.trace("RachioApi: Remaing number of API: limit={}, remaining={}, reset at {}", rateLimit,
-                    this.rateRemaining, this.rateReset);
-        }
-
-        public boolean isRateLimitWarning() {
-            return (rateRemaining > 0) && (rateRemaining < RACHIO_RATE_LIMIT_WARNING);
-        }
-
-        public boolean isRateLimitCritical() {
-            return (rateRemaining > 0) && (rateRemaining <= RACHIO_RATE_LIMIT_CRITICAL);
-        }
-
-        public boolean isRateLimitBlocked() {
-            return (rateRemaining > 0) && (rateRemaining <= RACHIO_RATE_LIMIT_BLOCK);
-        }
     }
 
     public class RachioZoneStatus {
@@ -132,10 +66,58 @@ public class RachioEvent {
     public int sequence = -1;
     public String status = ""; // COLD_REBOOT: "status" : "coldReboot",
 
-    public String eventType = "";
-    public String category = "";
+    /*
+     * type : DEVICE_STATUS
+     *
+     * Subtype:
+     *
+     * OFFLINE
+     * ONLINE
+     * OFFLINE_NOTIFICATION
+     * COLD_REBOOT
+     * SLEEP_MODE_ON
+     * SLEEP_MODE_OFF
+     * BROWNOUT_VALVE
+     * RAIN_SENSOR_DETECTION_ON
+     * RAIN_SENSOR_DETECTION_OFF
+     * RAIN_DELAY_ON
+     * RAIN_DELAY_OFF
+     *
+     * Type : SCHEDULE_STATUS
+     *
+     * Subtype:
+     *
+     * SCHEDULE_STARTED
+     * SCHEDULE_STOPPED
+     * SCHEDULE_COMPLETED
+     * WEATHER_INTELLIGENCE_NO_SKIP
+     * WEATHER_INTELLIGENCE_SKIP
+     * WEATHER_INTELLIGENCE_CLIMATE_SKIP
+     * WEATHER_INTELLIGENCE_FREEZE
+     *
+     * Type : ZONE_STATUS
+     *
+     * Subtype:
+     *
+     * ZONE_STARTED
+     * ZONE_STOPPED
+     * ZONE_COMPLETED
+     * ZONE_CYCLING
+     * ZONE_CYCLING_COMPLETED
+     *
+     * Type : DEVICE_DELTA
+     * Subtype : DEVICE_DELTA
+     *
+     * Type : ZONE_DELTA
+     * Subtype : ZONE_DELTA
+     *
+     * Type : SCHEDULE_DELTA
+     * Subtype : SCHEDULE_DELTA
+     */
     public String type = "";
     public String subType = "";
+    public String eventType = "";
+    public String category = "";
     public String topic = "";
     public String action = "";
     public String summary = "";
@@ -175,46 +157,5 @@ public class RachioEvent {
     public RachioEvent() {
         // eventDatas = new JsonArray();
     }
-
-    // public void setEventParms() {
-    /*
-     * No longer used for APIv3
-     *
-     * try {
-     *
-     * eventParms = new HashMap<String, String>();
-     * deltaProperties = new HashMap<String, RachioEventProperty>();
-     * for (int i = 0; i < eventDatas.size(); i++) {
-     * JsonElement jElement = eventDatas.get(i);
-     * JsonObject jObject = jElement.getAsJsonObject();
-     * String key = jObject.get("key").getAsString();
-     * JsonElement convertedValue = jObject.get("convertedValue");
-     * if (convertedValue != null) {
-     * String value = convertedValue.getAsString();
-     * eventParms.put(key, value);
-     * }
-     * JsonElement deltaContainer = jObject.get("deltaContainer");
-     * if (type.equals("DELTA") && (deltaContainer != null)) {
-     * JsonObject deltasObject = deltaContainer.getAsJsonObject();
-     * JsonElement deltas = deltasObject.get("deltas");
-     * if (deltas != null) {
-     * JsonArray deltaArray = deltas.getAsJsonArray();
-     * for (int dc = 0; dc < deltaArray.size(); dc++) {
-     * JsonElement jeProperty = deltaArray.get(dc);
-     * JsonObject joProperty = jeProperty.getAsJsonObject();
-     * RachioEventProperty evProperty = new RachioEventProperty();
-     * evProperty.propertyName = joProperty.get("propertyName").getAsString();
-     * evProperty.oldValue = joProperty.get("oldValue").getAsString();
-     * evProperty.newValue = joProperty.get("newValue").getAsString();
-     * deltaProperties.put(evProperty.propertyName, evProperty);
-     * }
-     * }
-     * }
-     * }
-     * } catch (Exception e) {
-     * logger.error("RachioEvent: Unable process parms for event '{}': {}", type, e.getMessage());
-     * }
-     */
-    // } // setEventParms()
 
 } // class RachioEvent

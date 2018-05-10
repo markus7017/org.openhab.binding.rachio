@@ -157,10 +157,14 @@ public class RachioBindingConstants {
     public static final String WHE_ZONE_DELTA = "12"; // A physical rain sensor event has occurred
     public static final String WHE_DELTA = "14"; // "An entity has been inserted, updated, or deleted"
 
-    public static final String WEBHOOK_PATH = "/rachio/webhook";
-    public static final String WEBHOOK_APPLICATION_JSON = "application/json";
-    public static final String WEBHOOK_CHARSET = "utf-8";
-    public static final String WEBHOOK_USER_AGENT = "Mozilla/5.0";
+    public static final String SERVLET_WEBHOOK_PATH = "/rachio/webhook";
+    public static final String SERVLET_WEBHOOK_APPLICATION_JSON = "application/json";
+    public static final String SERVLET_WEBHOOK_CHARSET = "utf-8";
+    public static final String SERVLET_WEBHOOK_USER_AGENT = "Mozilla/5.0";
+
+    public static final String SERVLET_IMAGE_PATH = "/rachio/images";
+    public static final String SERVLET_IMAGE_MIME_TYPE = "image/png";
+    public static final String SERVLET_IMAGE_URL_BASE = "https://prod-media-photo.rach.io/";
 
     public static final String RACHIO_JSON_RATE_LIMIT = "X-RateLimit-Limit";
     public static final String RACHIO_JSON_RATE_REMAINING = "X-RateLimit-Remaining";

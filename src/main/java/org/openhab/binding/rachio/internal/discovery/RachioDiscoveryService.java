@@ -19,6 +19,7 @@ import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
+import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.handler.RachioBridgeHandler;
@@ -56,7 +57,7 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     @Override
     @Activate
     protected void activate(Map<String, Object> configProperties) {
-        logger.debug("EntertainTV: Activate HandlerFactory, configurarion (services/binding." + BINDING_ID + ".cfg):");
+        logger.debug("Rachio: Activate HandlerFactory, configurarion (services/binding." + BINDING_ID + ".cfg):");
         bindingConfig.updateConfig(configProperties);
     }
 
@@ -153,20 +154,26 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
                         logger.info("RachioDiscovery: Zone#{} '{}' (id={}) added, enabled={}", zone.zoneNumber,
                                 zone.name, zone.id, zone.getEnabled());
 
-                        @SuppressWarnings({ "unchecked", "rawtypes" })
-                        Map<String, Object> zproperties = (Map) zone.fillProperties();
-                        DiscoveryResult zoneDiscoveryResult = DiscoveryResultBuilder.create(zoneThingUID)
-                                .withProperties(zproperties).withBridge(bridgeUID)
-                                .withLabel(dev.name + "[" + zone.zoneNumber + "]: " + zone.name).build();
-                        thingDiscovered(zoneDiscoveryResult);
+                        if (zone.getEnabled() == OnOffType.ON) {
+                            @SuppressWarnings({ "unchecked", "rawtypes" })
+                            Map<String, Object> zproperties = (Map) zone.fillProperties();
+                            DiscoveryResult zoneDiscoveryResult = DiscoveryResultBuilder.create(zoneThingUID)
+                                    .withProperties(zproperties).withBridge(bridgeUID)
+                                    .withLabel(dev.name + "[" + zone.zoneNumber + "]: " + zone.name).build();
+                            thingDiscovered(zoneDiscoveryResult);
+                        } else {
+                            logger.info("RachioDiscovery: Zone#{} '{}' is disabled, skip thing creation", zone.name,
+                                    zone.id);
+                        }
                     } // if (cloudHandler.getThingByUID(zoneThingUID) == null)
-
                 } // for (each zone)
             } // for (seach device)
             logger.info("{}  Rachio controller initialized.", deviceList.size());
 
             stopScan();
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             logger.error("RachioDiscovery: Unexpected error while discovering Rachio devices/zones: {}",
                     e.getMessage());
         }

@@ -20,25 +20,79 @@ import com.google.gson.Gson;
  */
 @SuppressWarnings("unused")
 public class RachioEventString {
-    private final String timetstamp;
-    private final String summary;
-    private final String topic;
-    private final String type;
-    private final String subType;
+    private class genericEvent {
+        private final String timetstamp;
+        private final String summary;
+        private final String topic;
+        private final String type;
+        private final String subType;
 
+        public genericEvent(RachioEvent event) {
+            timetstamp = event.timestamp;
+            summary = event.summary;
+            topic = event.topic;
+            type = event.type;
+            subType = event.subType;
+        }
+    }
+
+    private class zoneEvent {
+        private final String timetstamp;
+        private final String summary;
+        private final String topic;
+        private final String type;
+        private final String subType;
+
+        private final int zoneNumber;
+        private final String zoneRunState;
+        private final String scheduleType;
+        private final String startTime;
+        private final String endTime;
+        private final int zoneCurrent;
+        private final int duration;
+        private final int durationInMinutes;
+        private final int flowVolume;
+
+        public zoneEvent(RachioEvent event) {
+            timetstamp = event.timestamp;
+            summary = event.summary;
+            topic = event.topic;
+            type = event.type;
+            subType = event.subType;
+
+            zoneNumber = event.zoneNumber;
+            zoneRunState = event.zoneRunState;
+            scheduleType = event.zoneRunStatus.scheduleType;
+            startTime = event.zoneRunStatus.startTime;
+            endTime = event.zoneRunStatus.endTime;
+            zoneCurrent = event.zoneCurrent;
+            duration = event.duration;
+            durationInMinutes = event.durationInMinutes;
+            flowVolume = event.flowVolume;
+        }
+    }
+
+    private genericEvent gEvent;
+    private zoneEvent zEvent;
     private Gson gson = new Gson();
 
     public RachioEventString(RachioEvent event) {
-        timetstamp = event.timestamp;
-        summary = event.summary;
-        topic = event.topic;
-        type = event.type;
-        subType = event.subType;
+        if (event.type.equals("ZONE_STATUS")) {
+            zEvent = new zoneEvent(event);
+        } else {
+            gEvent = new genericEvent(event);
+        }
     }
 
     public String toJson() {
-        String json = gson.toJson(this);
-        String str = json.contains("\"gson\"") ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
+        // String json = gson.toJson(this);
+        // String str = json.contains("\"gson\"") ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
+        String str = "";
+        if (zEvent.type != null) {
+            str = gson.toJson(zEvent);
+        } else {
+            str = gson.toJson(gEvent);
+        }
         return str;
     }
 }

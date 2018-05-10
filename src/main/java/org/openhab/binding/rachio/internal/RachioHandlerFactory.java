@@ -107,11 +107,19 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected void removeHandler(final ThingHandler thingHandler) {
         logger.debug("RachioHandlerFactory:: Removing Rachio Cloud handler");
-        if (!(thingHandler instanceof RachioBridgeHandler)) {
-            return;
+        if (thingHandler instanceof RachioBridgeHandler) {
+            RachioBridgeHandler bridgeHandler = (RachioBridgeHandler) thingHandler;
+            unregisterDiscoveryService(bridgeHandler);
+            bridgeHandler.shutdown();
         }
-
-        unregisterDiscoveryService((RachioBridgeHandler) thingHandler);
+        if (thingHandler instanceof RachioDeviceHandler) {
+            RachioDeviceHandler deviceHandler = (RachioDeviceHandler) thingHandler;
+            deviceHandler.shutdown();
+        }
+        if (thingHandler instanceof RachioZoneHandler) {
+            RachioZoneHandler zoneHandler = (RachioZoneHandler) thingHandler;
+            zoneHandler.shutdown();
+        }
     }
 
     /**
@@ -122,7 +130,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     public boolean webHookEvent(String ipAddress, RachioEvent event) {
         try {
             logger.trace("RachioEvent: Event for device '{}' received", event.deviceId);
-            if (!RachioNetwork.isIpInSubnet(ipAddress, getIpFilter()) || !rachioNetwork.isIpInAwsList(ipAddress)) {
+            if (!RachioNetwork.isIpInSubnet(ipAddress, getIpFilter()) && !rachioNetwork.isIpInAwsList(ipAddress)) {
                 logger.error("RachioBridge: Request from unknown IP address range, might be abuse! Request rejected");
                 return false;
             }

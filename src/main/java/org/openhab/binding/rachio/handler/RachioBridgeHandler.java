@@ -12,6 +12,7 @@ package org.openhab.binding.rachio.handler;
 
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -92,6 +93,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      */
     @Override
     public void initialize() {
+        String errorMessage = "";
+
         try {
             thingConfig = bindingConfig;
             thingConfig.updateConfig(getConfig().getProperties());
@@ -136,10 +139,17 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             // updateListenerManagement();
             logger.info("RachioCloud: Cloud connector initialized.");
             updateStatus(ThingStatus.ONLINE);
+        } catch (RachioApiException e) {
+            errorMessage = e.toString();
+        } catch (UnknownHostException e) {
+            errorMessage = MessageFormat.format("Unknown host '{0}' or Internet connection down", e.getMessage());
         } catch (Throwable e) {
-            String errorMessage = MessageFormat.format("RachioBridge: {0}", e.getMessage());
-            logger.error("RachioBridge: {}", e.getMessage());
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, errorMessage);
+            errorMessage = e.getMessage();
+        } finally {
+            if (!errorMessage.isEmpty()) {
+                logger.error("RachioBridge: {}", errorMessage);
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, errorMessage);
+            }
         }
     } // initialize()
 
@@ -157,6 +167,9 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * in addition webhooks are used to get events (if callbackUrl is configured)
      */
     public void refreshDeviceStatus() {
+        String errorMessage = "";
+        logger.debug("RachioBridgeHandler: refreshDeviceStatus");
+
         try {
             synchronized (this) {
                 if (jobPending) {
@@ -166,7 +179,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
                 jobPending = true;
             }
 
-            logger.trace("RachioBridgeHandler: refreshDeviceStatus");
             HashMap<String, RachioDevice> deviceList = getDevices();
             if (deviceList == null) {
                 logger.debug("RachioBridgeHandler: Cloud access not initialized yet!");
@@ -239,20 +251,30 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
                     } // for each zone
                 } // for each device
             } // try
+        } catch (RachioApiException e) {
+            errorMessage = e.toString();
         } catch (Throwable e) {
-            logger.error("{}", e.getMessage());
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+            errorMessage = e.getMessage();
         } finally {
+            if (!errorMessage.isEmpty()) {
+                logger.error("RachioBridge: {}", errorMessage);
+                // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, errorMessage);
+            }
             jobPending = false;
         }
     } // refreshDeviceStatus()
+
+    public void shutdown() {
+        logger.info("RachioBridge: Shutting down");
+        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
+    }
 
     /**
      * Create a new SleepIQ cloud service connection. If a connection already exists, it will be lost.
      *
      * @throws LoginException if there is an error while authenticating to the service
      */
-    private void createCloudConnection(RachioApi api) throws RachioApiException {
+    private void createCloudConnection(RachioApi api) throws RachioApiException, UnknownHostException {
         if (thingConfig.apikey.isEmpty()) {
             throw new RachioApiException(
                     "RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set, check services/rachio.cfg!");
@@ -269,13 +291,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Device (ID retrieved from initialization)
      * @return true: successful, failed (check http error code)
      */
-    public boolean disableDevice(String deviceId) {
-        try {
-            return rachioApi.disableDevice(deviceId);
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.disableDevice failed: {}", e.getMessage());
-        }
-        return false;
+    public void disableDevice(String deviceId) throws RachioApiException {
+        rachioApi.disableDevice(deviceId);
     }
 
     /**
@@ -284,13 +301,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Device (ID retrieved from initialization)
      * @return true: successful, failed (check http error code)
      */
-    public boolean enableDevice(String deviceId) {
-        try {
-            return rachioApi.enableDevice(deviceId);
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.enableDevice failed: {}", e.getMessage());
-        }
-        return false;
+    public void enableDevice(String deviceId) throws RachioApiException {
+        rachioApi.enableDevice(deviceId);
     }
 
     /**
@@ -300,13 +312,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return true: successful, failed (check http error code)
      * @return
      */
-    public boolean stopWatering(String deviceId) {
-        try {
-            return rachioApi.stopWatering(deviceId);
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.stopWatering failed: {}", e.getMessage());
-        }
-        return false;
+    public void stopWatering(String deviceId) throws RachioApiException {
+        rachioApi.stopWatering(deviceId);
     }
 
     /**
@@ -316,13 +323,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param delayTime: Number of seconds for rain delay sycle
      * @return true: successful, failed (check http error code)
      */
-    public boolean startRainDelay(String deviceId, int delayTime) {
-        try {
-            return rachioApi.rainDelay(deviceId, delayTime);
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.startRainDelay failed: {}", e.getMessage());
-        }
-        return false;
+    public void startRainDelay(String deviceId, int delayTime) throws RachioApiException {
+        rachioApi.rainDelay(deviceId, delayTime);
     }
 
     /**
@@ -331,14 +333,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param zoneListJson: Contains a list of { "id": n} with the zone ids to start
      * @return true: successful, failed (check http error code)
      */
-    public boolean runMultipleZones(String zoneListJson) {
-        try {
-            return rachioApi.runMultilpeZones(zoneListJson);
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.runMultipleZones failed: {}", e.getMessage());
-        }
-        return false;
-
+    public void runMultipleZones(String zoneListJson) throws RachioApiException {
+        rachioApi.runMultilpeZones(zoneListJson);
     }
 
     /**
@@ -348,13 +344,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param runTime: Number of seconds to run
      * @return true: successful, failed (check http error code)
      */
-    public boolean startZone(String zoneId, int runTime) {
-        try {
-            return rachioApi.runZone(zoneId, runTime);
-        } catch (Throwable e) {
-            logger.error("RachioBridgeHandler.startZone failed: {}", e.getMessage());
-        }
-        return false;
+    public void startZone(String zoneId, int runTime) throws RachioApiException {
+        rachioApi.runZone(zoneId, runTime);
     }
 
     //
@@ -463,18 +454,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Matching device ID (as retrieved from device initialization)
      * @return trtue: successful, false: failed (check http error code)
      */
-    public boolean registerWebHook(String deviceId) {
-        try {
-            if (getCallbackUrl().equals("")) {
-                logger.trace("RachioApi: No callbackUrl configured.");
-                return true;
-            } else {
-                return rachioApi.registerWebHook(deviceId, getCallbackUrl(), getExternalId(), getClearAllCallbacks());
-            }
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler.registerWebHook({}) failed: {}", deviceId, e.getMessage());
+    public void registerWebHook(String deviceId) throws RachioApiException {
+        if (getCallbackUrl().equals("")) {
+            logger.trace("RachioApi: No callbackUrl configured.");
+        } else {
+            rachioApi.registerWebHook(deviceId, getCallbackUrl(), getExternalId(), getClearAllCallbacks());
         }
-        return false;
     }
 
     /**
@@ -482,54 +467,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      *
      * @param event
      * @return
-     */
-    /*
-     * type : DEVICE_STATUS
-     *
-     * Subtype:
-     *
-     * OFFLINE
-     * ONLINE
-     * OFFLINE_NOTIFICATION
-     * COLD_REBOOT
-     * SLEEP_MODE_ON
-     * SLEEP_MODE_OFF
-     * BROWNOUT_VALVE
-     * RAIN_SENSOR_DETECTION_ON
-     * RAIN_SENSOR_DETECTION_OFF
-     * RAIN_DELAY_ON
-     * RAIN_DELAY_OFF
-     *
-     * Type : SCHEDULE_STATUS
-     *
-     * Subtype:
-     *
-     * SCHEDULE_STARTED
-     * SCHEDULE_STOPPED
-     * SCHEDULE_COMPLETED
-     * WEATHER_INTELLIGENCE_NO_SKIP
-     * WEATHER_INTELLIGENCE_SKIP
-     * WEATHER_INTELLIGENCE_CLIMATE_SKIP
-     * WEATHER_INTELLIGENCE_FREEZE
-     *
-     * Type : ZONE_STATUS
-     *
-     * Subtype:
-     *
-     * ZONE_STARTED
-     * ZONE_STOPPED
-     * ZONE_COMPLETED
-     * ZONE_CYCLING
-     * ZONE_CYCLING_COMPLETED
-     *
-     * Type : DEVICE_DELTA
-     * Subtype : DEVICE_DELTA
-     *
-     * Type : ZONE_DELTA
-     * Subtype : ZONE_DELTA
-     *
-     * Type : SCHEDULE_DELTA
-     * Subtype : SCHEDULE_DELTA
      */
     public boolean webHookEvent(RachioEvent event) {
         try {
@@ -542,7 +479,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             }
             logger.debug("RachioEvent {}.{} for unknown device '{}': {}", event.category, event.type, event.deviceId,
                     event.summary);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("RachioEvent: Unable to process event {}.{} for device '{}': {}", event.category, event.type,
                     event.deviceId, e.getMessage());
         }
