@@ -76,8 +76,8 @@ public class RachioImageServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
 
-        OutputStream writer = null;
         InputStream reader = null;
+        OutputStream writer = null;
         try {
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
             if (ipAddress == null) {
@@ -86,29 +86,29 @@ public class RachioImageServlet extends HttpServlet {
             String path = request.getRequestURI().substring(0, SERVLET_IMAGE_PATH.length());
             logger.trace("RachioImage: Reqeust from {}:{}{} ({}:{}, {})", ipAddress, request.getRemotePort(), path,
                     request.getRemoteHost(), request.getServerPort(), request.getProtocol());
+            if (!request.getMethod().equalsIgnoreCase(HTTP_METHOD_GET)) {
+                logger.error("RachioImage: Unexpected method='{}'", request.getMethod());
+            }
             if (!path.equalsIgnoreCase(SERVLET_IMAGE_PATH)) {
                 logger.error("RachioImage: Invalid request received - path = {}", path);
                 return;
             }
-            if (!request.getMethod().equalsIgnoreCase(HTTP_METHOD_GET)) {
-                logger.error("RachioImage: Unexpected method='{}'", request.getMethod());
-            }
 
             String uri = request.getRequestURI().substring(request.getRequestURI().lastIndexOf("/") + 1);
             String imageUrl = SERVLET_IMAGE_URL_BASE + uri;
-            logger.error("RachioImage: Load image from URI '{} {}' from '{}'", request.getMethod(), uri, imageUrl);
+            logger.debug("RachioImage: {} image '{}' from '{}'", request.getMethod(), uri, imageUrl);
+            setHeaders(resp);
             URL url = new URL(imageUrl);
             URLConnection conn = url.openConnection();
             conn.setDoInput(true);
-            // conn.setDoOutput(true);
-
-            setHeaders(resp);
-            writer = resp.getOutputStream();
+            conn.setDoOutput(true);
             reader = conn.getInputStream();
-            int available = reader.available();
-            byte[] data = new byte[available];
+            writer = resp.getOutputStream();
+
+            // read data in 4k chunks
+            byte[] data = new byte[4096];
             int n;
-            while ((n = reader.read(data)) != -1) {
+            while (((n = reader.read(data)) != -1)) {
                 writer.write(data, 0, n);
             }
 
