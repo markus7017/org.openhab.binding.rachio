@@ -185,7 +185,8 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
     public boolean webhookEvent(RachioEvent event) {
         boolean update = false;
         try {
-            zone.setEvent(event);
+            zone.setEvent(event); // set last zone event
+            dev.setEvent(event); // and funnel all zone events to the device
 
             String zoneName = event.zoneName;
             if (event.type.equals("ZONE_STATUS")) {
