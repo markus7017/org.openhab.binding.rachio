@@ -37,38 +37,32 @@ public class RachioEventString {
     }
 
     private class zoneEvent {
-        private final String timetstamp;
+        private final String timestamp;
         private final String summary;
-        private final String topic;
         private final String type;
         private final String subType;
 
+        private final String zoneName;
         private final int zoneNumber;
         private final String zoneRunState;
         private final String scheduleType;
         private final String startTime;
         private final String endTime;
-        private final int zoneCurrent;
         private final int duration;
-        private final int durationInMinutes;
-        private final int flowVolume;
 
         public zoneEvent(RachioEvent event) {
-            timetstamp = event.timestamp;
+            timestamp = event.timestamp;
             summary = event.summary;
-            topic = event.topic;
             type = event.type;
             subType = event.subType;
 
+            zoneName = event.zoneName;
             zoneNumber = event.zoneNumber;
             zoneRunState = event.zoneRunState;
             scheduleType = event.zoneRunStatus.scheduleType;
             startTime = event.zoneRunStatus.startTime;
             endTime = event.zoneRunStatus.endTime;
-            zoneCurrent = event.zoneCurrent;
             duration = event.duration;
-            durationInMinutes = event.durationInMinutes;
-            flowVolume = event.flowVolume;
         }
     }
 
