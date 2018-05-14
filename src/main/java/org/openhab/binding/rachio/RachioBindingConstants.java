@@ -58,7 +58,7 @@ public class RachioBindingConstants {
     public static final String PARAM_IPFILTER = "ipFilter";
 
     // List of non-standard Properties
-    public static final String PROPERTY_APIKEY = PARAM_APIKEY;
+    public static final String PROPERTY_APIKEY = "apikey";
     public static final String PROPERTY_NAME = "name";
     public static final String PROPERTY_MODEL = "model";
     public static final String PROPERTY_EXT_ID = "externalId";
