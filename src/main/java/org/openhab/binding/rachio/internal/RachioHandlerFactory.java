@@ -46,12 +46,11 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels (markus7017) - Initial contribution
  */
 @Component(service = { ThingHandlerFactory.class,
-        RachioHandlerFactory.class }, immediate = true, configurationPid = BINDING_ID)
+        RachioHandlerFactory.class }, immediate = true, configurationPid = "binding." + BINDING_ID)
 public class RachioHandlerFactory extends BaseThingHandlerFactory {
 
     public class RachioBridge {
         RachioBridgeHandler cloudHandler;
-        String externalId;
         ThingUID uid;
     }
 
@@ -69,7 +68,7 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     @Activate
     protected void activate(ComponentContext componentContext, Map<String, Object> configProperties) {
         super.activate(componentContext);
-        logger.debug("RachioBridge: Activate, configurarion (services/binding.rachio.cfg):");
+        logger.debug("RachioBridge: Activate, configurarion (services/rachio.cfg):");
         bindingConfig.updateConfig(configProperties);
         rachioNetwork.initializeAwsList(); // Load list of AWS IP address ranges
     }
@@ -138,12 +137,14 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             // event.setEventParms();// process event parameters
             for (HashMap.Entry<String, RachioBridge> be : bridgeList.entrySet()) {
                 RachioBridge bridge = be.getValue();
-                if (!bridge.externalId.equals(event.externalId)) {
-                    logger.info("RachioEvent: Check for externalId failed: '{}'", event.externalId);
-                    return false;
+                logger.trace("RachioEvent: Check for externalId: '{}' / '{}'", event.externalId,
+                        bridge.cloudHandler.getExternalId());
+                if (bridge.cloudHandler.getExternalId().equals(event.externalId)) {
+                    return bridge.cloudHandler.webHookEvent(event);
                 }
-                return bridge.cloudHandler.webHookEvent(event);
             }
+            logger.info("RachioEvent: Unauthorized webhook event (wrong externalId: '{}')", event.externalId);
+            return false;
         } catch (Exception e) {
             logger.error("RachioEvent: Unable to process event: {}", e.getMessage());
 
@@ -176,7 +177,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             bridge.uid = bridgeThing.getUID();
             bridge.cloudHandler = new RachioBridgeHandler(bridgeThing);
             bridge.cloudHandler.setConfiguration(bindingConfig);
-            bridge.externalId = bridge.cloudHandler.getExternalId();
             bridgeList.put(bridge.uid.toString(), bridge);
 
             registerDiscoveryService(bridge.cloudHandler);
