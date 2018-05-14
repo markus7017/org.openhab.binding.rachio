@@ -13,6 +13,7 @@ package org.openhab.binding.rachio.internal.api;
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
 import java.lang.reflect.Field;
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +36,8 @@ import com.google.gson.Gson;
 
 public class RachioApi {
     private static final Logger logger = LoggerFactory.getLogger(RachioApi.class);
+    private static final String MD5_HASH_ALGORITHM = "MD5";
+    private static final String UTF8_CHAR_SET = "UTF-8";
 
     public static class RachioApiResult {
         private final Logger logger = LoggerFactory.getLogger(RachioApiResult.class);
@@ -106,7 +109,10 @@ public class RachioApi {
     protected String userName = "";
     protected String fullName = "";
     protected String email = "";
+
     protected RachioApiResult lastApiResult = new RachioApiResult();
+    protected static final Integer externalIdSalt = (int) (Math.random() * 50 + 1);
+
     private HashMap<String, RachioDevice> deviceList = new HashMap<String, RachioDevice>();
     private RachioHttp httpApi = null;
 
@@ -166,6 +172,12 @@ public class RachioApi {
 
     public String getPersonId() {
         return personId;
+    }
+
+    public String getExternalId() {
+        // return a MD5 of the apikey
+        String hash = getMD5Hash(apikey) + "_" + externalIdSalt.toString();
+        return getMD5Hash(hash);
     }
 
     public boolean initialize(String apikey, ThingUID bridgeUID) throws RachioApiException {
@@ -369,6 +381,34 @@ public class RachioApi {
         properties.put(RachioBindingConstants.PROPERTY_PERSON_NAME, fullName);
         properties.put(RachioBindingConstants.PROPERTY_PERSON_EMAIL, email);
         return properties;
+    }
+
+    /**
+     * Given a string, return the MD5 hash of the String.
+     *
+     * @param unhashed The string contents to be hashed.
+     * @return MD5 Hashed value of the String. Null if there is a problem hashing the String.
+     */
+    protected static String getMD5Hash(String unhashed) {
+        try {
+            byte[] bytesOfMessage = unhashed.getBytes(UTF8_CHAR_SET);
+
+            MessageDigest md5 = MessageDigest.getInstance(MD5_HASH_ALGORITHM);
+
+            byte[] hash = md5.digest(bytesOfMessage);
+
+            StringBuilder sb = new StringBuilder(2 * hash.length);
+
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+
+            String digest = sb.toString();
+
+            return digest;
+        } catch (Exception exp) {
+            return null;
+        }
     }
 
     public static void copyMatchingFields(Object fromObj, Object toObj) {
