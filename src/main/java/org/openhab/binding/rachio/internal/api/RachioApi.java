@@ -175,8 +175,8 @@ public class RachioApi {
     }
 
     public String getExternalId() {
-        // return a MD5 of the apikey
-        String hash = getMD5Hash(apikey) + "_" + externalIdSalt.toString();
+        // return a salted ash of the apikey
+        String hash = "OH_" + getMD5Hash(apikey) + "_" + externalIdSalt.toString();
         return getMD5Hash(hash);
     }
 
