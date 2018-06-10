@@ -20,11 +20,13 @@ class RachioCloudZone {
     public int zoneNumber = 0; // "zoneNumber":6,
     public String name = ""; // "name":"Zone 6 - Garage back",
     public boolean enabled = true; // "enabled":true,
-    // public RachioCustomeNozzle customNozzle ;
-    // public RachioCustomSoil customSoil;
-    // public RachioCustomSlope customSlope;
-    // public RachioCustomCrop customCrop;
-    // public RachioCustomCrop customShade;
+
+    //public RachioCustomeNozzle customNozzle;
+    //public RachioCustomSoil customSoil;
+    //public RachioCustomSlope customSlope;
+    //public RachioCustomCrop customCrop;
+    //public RachioCustomCrop customShade;
+
     public double availableWater = 0.0; // "availableWater":0.05,
     public double rootZoneDepth = 0.0; // "rootZoneDepth":9.0,
     public double managementAllowedDepletion = 0.0; // "managementAllowedDepletion":0.5,
@@ -41,26 +43,26 @@ class RachioCloudZone {
     public int runtimeNoMultiplier = 0; // "runtimeNoMultiplier":627,
     public int runtime = 0; // "runtime":627
 
-    class RachioCustomeNozzle {
+    public class RachioCustomeNozzle {
         public String name = ""; // "name":"FIXED_SPRAY_HEAD",
         public Double inchesPerHour = 0.0; // "inchesPerHour":1.5
     }
 
-    class RachioCustomSoil {
+    public class RachioCustomSoil {
         public String name = ""; // "name":"ZERO_THREE",
         public int sortOrder = 0; // "sortOrder":0
     }
 
-    class RachioCustomSlope {
+    public class RachioCustomSlope {
         public String name = ""; // "name":"SAND"
     }
 
-    class RachioCustomCrop {
+    public class RachioCustomCrop {
         public String name = ""; // "name":"Warm Season Grass",
         public Double coefficient = 0.0; // "coefficient":0.65
     }
 
-    class RachioCustomShade {
+    public class RachioCustomShade {
         public String name = ""; // "name":"LOTS_OF_SUN"
     }
 } // class RachioCloudZone
