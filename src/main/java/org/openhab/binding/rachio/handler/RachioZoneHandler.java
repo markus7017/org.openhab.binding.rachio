@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.rachio.handler;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -160,6 +162,9 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
             errorMessage = e.toString();
         } catch (Throwable e) {
             errorMessage = e.getMessage();
+            if (errorMessage == null) {
+                errorMessage = e.toString();
+            }
         } finally {
             if (!errorMessage.isEmpty()) {
                 logger.error("RachioZoneHandler: {}", errorMessage);
@@ -185,7 +190,7 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
     public boolean webhookEvent(RachioEvent event) {
         boolean update = false;
         try {
-            zone.setEvent(event); // set last zone event
+            // zone.setEvent(event); // set last zone event
             dev.setEvent(event); // and funnel all zone events to the device
 
             String zoneName = event.zoneName;
@@ -228,23 +233,25 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
     @SuppressWarnings("null")
     public void postChannelData() {
         if (zone != null) {
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_NAME, new StringType(zone.name));
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_NUMBER, new DecimalType(zone.zoneNumber));
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_ENABLED, zone.getEnabled());
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_RUN, OnOffType.OFF);
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_RUN_TIME, new DecimalType(zone.getStartRunTime()));
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_RUN_TOTAL, new DecimalType(zone.runtime));
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_IMAGEURL, new StringType(zone.imageUrl));
-            updateChannel(RachioBindingConstants.CHANNEL_ZONE_EVENT, new StringType(zone.getEvent()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_AVL_WATER, new DecimalType(zone.getAvlWater()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_ROOT_DEPTH, new DecimalType(zone.getRootDepth()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_EFFICIENCY, new DecimalType(zone.getEfficiency()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_YARD_SQFT, new DecimalType(zone.getYardAreaSqft()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_WATHER_DEPTH, new DecimalType(zone.getWaterDepth()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_NZ_IMGURL, new StringType(zone.getNozzleImageUrl()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_NZ_HEADCAT, new StringType(zone.getNozzleHeadCat()));
-            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_NZ_IPH, new
-            // DecimalType(zone.getNozzleInchesPerHour()));
+            updateChannel(CHANNEL_ZONE_NAME, new StringType(zone.name));
+            updateChannel(CHANNEL_ZONE_NUMBER, new DecimalType(zone.zoneNumber));
+            updateChannel(CHANNEL_ZONE_ENABLED, zone.getEnabled());
+            updateChannel(CHANNEL_ZONE_RUN, OnOffType.OFF);
+            updateChannel(CHANNEL_ZONE_RUN_TIME, new DecimalType(zone.getStartRunTime()));
+            updateChannel(CHANNEL_ZONE_RUN_TOTAL, new DecimalType(zone.runtime));
+            updateChannel(CHANNEL_ZONE_IMAGEURL, new StringType(zone.imageUrl));
+            // updateChannel(RachioBindingConstants.CHANNEL_ZONE_EVENT, new StringType(zone.getEvent()));
+            // updateChannel(CHANNEL_ZONE_AVL_WATER, new DecimalType(zone.availableWater));
+            // updateChannel(CHANNEL_ZONE_ROOT_DEPTH, new DecimalType(zone.rootZoneDepth));
+            // updateChannel(CHANNEL_ZONE_EFFICIENCY, new DecimalType(zone.efficiency));
+            // updateChannel(CHANNEL_ZONE_YARD_SQFT, new DecimalType(zone.yardAreaSquareFeet));
+            // updateChannel(CHANNEL_ZONE_WATHER_DEPTH, new DecimalType(zone.depthOfWater));
+            // updateChannel(CHANNEL_ZONE_SOIL_TYPE, new StringType(zone.customSoil.name));
+            // updateChannel(CHANNEL_ZONE_SLOPE_TYPE, new StringType(zone.customSlope.name));
+            // updateChannel(CHANNEL_ZONE_CROP_TYPE, new StringType(zone.customCrop.name));
+            // updateChannel(CHANNEL_ZONE_SHADE_TYPE, new StringType(zone.customShade.name));
+            // updateChannel(CHANNEL_ZONE_NOZZLE_TYPE, new StringType(zone.customNozzle.name));
+            // updateChannel(CHANNEL_ZONE_NOZZLE_IPH, new DecimalType(zone.customNozzle.inchesPerHour));
 
         }
     } // postChannelData()
