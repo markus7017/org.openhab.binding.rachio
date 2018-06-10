@@ -891,3 +891,82 @@ RachioWebHook: Event DEVICE_STATUS:
   "deviceId":"xxxxxxxx-b85a-49fe-a45d-xxxxxxxx",
   "timestamp" : "2018-04-09T23:17:14.365Z"
 }
+
+// V3: SCHEDULE_COMPLETED_EVENT
+{
+  "scheduleName" : "Water all zones",
+  "intendedTime" : "2018-05-24T08:00:00Z",
+  "routingId" : "xxxxxxxx-b85a-49fe-a45d-xxxxxxxx",
+  "executionType" : "SCHEDULED",
+  "icon" : "SCHEDULE",
+  "description" : "Water all zones ran for 180 minutes.",
+  "endTimeForSummary" : "07:00 AM (EDT)",
+  "type" : "SCHEDULE_STATUS",
+  "title" : "Schedule Completed",
+  "deviceId" : "xxxxxxxx-b85a-49fe-a45d-xxxxxxxxx",
+  "duration" : 10799,
+  "pushTitle" : "Schedule Completed",
+  "startTime" : "2018-05-24T08:00:01.638Z",
+  "id" : "xxxxxxxx-e426-3bac-b8a4-xxxxxxxxx",
+  "iconUrl" : "https://media.rach.io/v3_prod_event_icons/schedule_fixed",
+  "scheduleId" : "xxxxxxxx-2101-4d29-b9e8-xxxxxxxx",
+  "seqId" : 1,
+  "timestamp" : "2018-05-24T11:00:26Z",
+  "summary" : "Water all zones ran for 180 minutes.",
+  "corId" : 65341,
+  "durationInMinutes" : 180,
+  "timeZone" : "America/New_York",
+  "externalId" : "1370c2a14848fd9f5fe10d1a77a91367",
+  "timeForSummary" : "04:00 AM (EDT)",
+  "eventType" : "SCHEDULE_COMPLETED_EVENT",
+  "dateForSummary" : "5/24",
+  "scheduleType" : "FIXED",
+  "subType" : "SCHEDULE_COMPLETED",
+  "endTime" : "2018-05-24T11:00:00.638Z",
+  "category" : "SCHEDULE"
+}
+
+// V3: DEVICE_COLD_REBOOT_EVENT
+{
+  "summary" : "Rachio-Golf'n Sun has turned off and back on. This is usually not a problem. If power cycles continue, tap '?' above to contact Rachio Support.",
+  "routingId" : "xxxxxxxx-c4a0-49cb-932c-xxxxxxxx",
+  "mqttTimestamp" : 1527116546895,
+  "icon" : "DEVICE",
+  "externalId" : "1370c2a14848fd9f5fe10d1a77a91367",
+  "eventType" : "DEVICE_COLD_REBOOT_EVENT",
+  "type" : "DEVICE_STATUS",
+  "title" : "Power Cycle",
+  "deviceId" : "bac64a79-c4a0-49cb-932c-fc7a08635350",
+  "deviceName" : "Rachio-Golf'n Sun",
+  "network" : {
+    "gw" : "192.168.x.x",
+    "rssi" : -58,
+    "dns2" : "9.9.9.9",
+    "dns1" : "192.168.x.1",
+    "ip" : "192.168.x.x",
+    "nm" : "255.255.255.0"
+  },
+  "sequence" : 1,
+  "pin" : "xxxxxxxx",
+  "subType" : "COLD_REBOOT",
+  "id" : "xxxxxxxx-d8f3-38c2-aa03-xxxxxxxx",
+  "iconUrl" : "https://media.rach.io/v3_prod_event_icons/device_update",
+  "connectId" : 24,
+  "category" : "DEVICE",
+  "status" : "coldReboot",
+  "timestamp" : "2018-05-23T23:02:26Z"
+}
+
+// Quary available webhook types
+[
+    {"id":5,"name":"DEVICE_STATUS_EVENT","type":"WEBHOOK"},
+    {"id":10,"name":"ZONE_STATUS_EVENT","type":"WEBHOOK"},
+    {"id":6,"name":"RAIN_DELAY_EVENT","type":"WEBHOOK"},
+    {"id":7,"name":"WEATHER_INTELLIGENCE_EVENT","type":"WEBHOOK"},
+    {"id":9,"name":"SCHEDULE_STATUS_EVENT","type":"WEBHOOK"},
+    {"id":11,"name":"RAIN_SENSOR_DETECTION_EVENT","type":"WEBHOOK"},
+    {"id":8,"name":"WATER_BUDGET","type":"WEBHOOK"},
+    {"id":12,"name":"ZONE_DELTA","type":"WEBHOOK"},
+    {"id":14,"name":"DELTA","type":"WEBHOOK"}
+]
+
