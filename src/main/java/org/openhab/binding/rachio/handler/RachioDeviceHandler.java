@@ -96,12 +96,14 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         } catch (RachioApiException e) {
             errorMessage = e.toString();
         } catch (Throwable e) {
-            errorMessage = e.getMessage();
+            if (e.getMessage() != null) {
+                errorMessage = e.getMessage();
+            }
         } finally {
             if (!errorMessage.isEmpty()) {
                 logger.error("RachioBridge: {}", errorMessage);
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, errorMessage);
             }
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, errorMessage);
         }
     } // initialize()
 
@@ -162,7 +164,7 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
             } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_RAIN_DELAY)) {
                 if (command instanceof DecimalType) {
                     logger.info("RachioDevice: Start rain delay cycle for {} sec", command.toString());
-                    dev.setRainDelay(((DecimalType) command).intValue());
+                    dev.setRainDelayTime(((DecimalType) command).intValue());
                     cloudHandler.startRainDelay(dev.id, ((DecimalType) command).intValue());
                 } else {
                     logger.debug("RachioDevice: command value is no DecimalType: {}", command);
@@ -192,9 +194,10 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
             updateChannel(RachioBindingConstants.CHANNEL_DEVICE_RUN_ZONES, new StringType(dev.getRunZones()));
             updateChannel(RachioBindingConstants.CHANNEL_DEVICE_RUN_TIME, new DecimalType(dev.getRunTime()));
             updateChannel(RachioBindingConstants.CHANNEL_DEVICE_RAIN_DELAY, new DecimalType(dev.rainDelay));
+            updateChannel(RachioBindingConstants.CHANNEL_DEVICE_EVENT, new StringType(dev.getEvent()));
             updateChannel(RachioBindingConstants.CHANNEL_DEVICE_LATITUDE, new DecimalType(dev.longitude));
             updateChannel(RachioBindingConstants.CHANNEL_DEVICE_LONGITUDE, new DecimalType(dev.latitude));
-            updateChannel(RachioBindingConstants.CHANNEL_DEVICE_EVENT, new StringType(dev.getEvent()));
+            updateChannel(RachioBindingConstants.CHANNEL_DEVICE_SCHEDULE, new StringType(dev.scheduleName));
         }
     }
 
@@ -276,7 +279,10 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                 // RAIN_SENSOR_DETECTION_ON, RAIN_SENSOR_DETECTION_OFF, RAIN_DELAY_ON, RAIN_DELAY_OFF
                 logger.info("Rachio device {} ('{}') changed to status '{}'.", dev.name, dev.id, event.subType);
                 if (event.subType.equals("COLD_REBOOT")) {
-                    logger.info("Rachio device {} ('{}') was restarted.", dev.name, dev.id);
+                    logger.info("Rachio device {} (id '{}') was restarted, ip={}/{}, gw={}, dns={}/{}, wifi rssi={}.",
+                            dev.name, dev.id, dev.network.ip, dev.network.nm, dev.network.gw, dev.network.dns1,
+                            dev.network.dns2, dev.network.rssi);
+                    dev.setNetwork(event.network);
                 } else if (event.subType.equals("ONLINE")) {
                     logger.info("Rachio device {} ('{}') is now ONLINE.", dev.name, dev.id);
                     dev.setStatus(event.subType);
@@ -297,28 +303,18 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
                     logger.info("Rachio device {} ('{}') reporterd a rain delay OFF.", dev.name, dev.id);
                     update = false; // details missing
                 } else if (event.subType.equals("RAIN_SENSOR_DETECTION_ON")) {
-                    logger.info("Rachio device {} ('{}') is  sleep mode.", dev.name, dev.id);
+                    logger.info("Rachio device {} ('{}') reporterd a rain sensor ON.", dev.name, dev.id);
                     update = false; // details missing
                 } else if (event.subType.equals("RAIN_SENSOR_DETECTION_ON")) {
-                    logger.info("Rachio device {} ('{}') is  sleep mode.", dev.name, dev.id);
+                    logger.info("Rachio device {} ('{}') reporterd a rain sensor OFF.", dev.name, dev.id);
                     update = false; // details missing
                 } else {
                     update = false; // details missing
                 }
-            } else if (event.subType.equals("DEVICE_DELTA")) {
-                logger.info("RachioDevice '{}': Device DELTA received: {} {}", dev.name, event.category, event.action);
-                // for (HashMap.Entry<String, RachioEvent.RachioEventProperty> de : event.deltaProperties.entrySet()) {
-                // RachioEvent.RachioEventProperty delta = de.getValue();
-                // logger.debug(" {}: old={}, new={}", delta.propertyName, delta.oldValue, delta.newValue);
-                // }
-                // update = false; // details missing
-                // cloudHandler.refreshSingleDevice(dev);
-            } else if (event.subType.equals("SCHEDULE_DELTA")) {
-                logger.info("RachioDevice Schedule '{}'' for device '{}' {}", event.scheduleId, dev.name, event.action);
-                // no action -> just post event message to OH
-            } else if (etype.equals("SCHEDULE_STATUS")) {
-                logger.info("RachioDevice '{}': schedule'{}' {} (type={}, estimatedDuration = {}sec - {})", dev.name,
-                        event.scheduleName, event.pushTitle, event.scheduleType, event.duration, event.summary);
+            } else if (event.type.equals("SCHEDULE_STATUS")) {
+                logger.info("RachioDevice '{}' for device '{}', schedule='{}': {} (start={}, end={}, duration={}min)",
+                        event.subType, dev.name, event.scheduleName, event.summary, event.startTime, event.endTime,
+                        event.durationInMinutes);
                 // no action -> just post event message to OH
             } else {
                 update = false; // unknown event
