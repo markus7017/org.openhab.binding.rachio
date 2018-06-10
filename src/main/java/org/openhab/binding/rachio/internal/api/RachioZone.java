@@ -48,11 +48,11 @@ public class RachioZone extends RachioCloudZone {
     public RachioZone(RachioCloudZone zone, String uniqueId) {
         try {
             RachioApi.copyMatchingFields(zone, this);
-            this.customSoil = zone.customSoil;
-            this.customSlope = zone.customSlope;
-            this.customCrop = zone.customCrop;
-            this.customShade = zone.customShade;
-            this.customNozzle = zone.customNozzle;
+            // this.customSoil = zone.customSoil;
+            // this.customSlope = zone.customSlope;
+            // this.customCrop = zone.customCrop;
+            // this.customShade = zone.customShade;
+            // this.customNozzle = zone.customNozzle;
 
             if (zone.imageUrl.substring(0, SERVLET_IMAGE_URL_BASE.length()).equalsIgnoreCase(SERVLET_IMAGE_URL_BASE)) {
                 // when trying to load the imageUrl Rachio doesn't add a ".png" and doesn't set the mime type. As a
@@ -103,12 +103,12 @@ public class RachioZone extends RachioCloudZone {
         depthOfWater = updatedZone.depthOfWater;
         runtime = updatedZone.runtime;
         lastWateredDate = updatedZone.lastWateredDate;
-        customSoil.name = updatedZone.customSoil.name;
-        customSlope.name = updatedZone.customSlope.name;
-        customCrop.name = updatedZone.customCrop.name;
-        customShade.name = updatedZone.customShade.name;
-        customNozzle.name = updatedZone.customNozzle.name;
-        customNozzle.inchesPerHour = updatedZone.customNozzle.inchesPerHour;
+        // customSoil.name = updatedZone.customSoil.name;
+        // customSlope.name = updatedZone.customSlope.name;
+        // customCrop.name = updatedZone.customCrop.name;
+        // customShade.name = updatedZone.customShade.name;
+        // customNozzle.name = updatedZone.customNozzle.name;
+        // customNozzle.inchesPerHour = updatedZone.customNozzle.inchesPerHour;
     } // update()
 
     public void setUID(ThingUID deviceUID, ThingUID zoneUID) {

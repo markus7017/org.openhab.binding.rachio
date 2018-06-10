@@ -54,18 +54,19 @@
         <description>The things controls one sprinkler controller, which might have multiple zones.</description>
 
         <channels>
-            <channel id="name"       typeId="dev_name"/>
-            <channel id="active"     typeId="dev_active"/>
-            <channel id="online"     typeId="dev_online"/>
-            <channel id="paused"     typeId="dev_paused"/>
-            <channel id="stop"       typeId="dev_stop"/>
-            <channel id="run"        typeId="dev_run"/>
-            <channel id="runZones"   typeId="dev_runZones"/>
-            <channel id="runTime"    typeId="dev_runTime"/>
-            <channel id="rainDelay"  typeId="dev_rainDelay"/>
-            <channel id="devEvent"   typeId="dev_event"/>
-            <channel id="latitude"   typeId="dev_latitude"/>
-            <channel id="longitude"  typeId="dev_longitude"/>
+            <channel id="name"          typeId="dev_name"/>
+            <channel id="active"        typeId="dev_active"/>
+            <channel id="online"        typeId="dev_online"/>
+            <channel id="paused"        typeId="dev_paused"/>
+            <channel id="stop"          typeId="dev_stop"/>
+            <channel id="run"           typeId="dev_run"/>
+            <channel id="runZones"      typeId="dev_runZones"/>
+            <channel id="runTime"       typeId="dev_runTime"/>
+            <channel id="rainDelay"     typeId="dev_rainDelay"/>
+            <channel id="devEvent"      typeId="dev_event"/>
+            <channel id="latitude"      typeId="dev_latitude"/>
+            <channel id="longitude"     typeId="dev_longitude"/>
+            <channel id="scheduleName"  typeId="dev_schedule"/>
         </channels>
     </thing-type>
 
@@ -119,20 +120,26 @@
         <label>Last Device Event</label>
         <description>Events can be received when callback is configured.</description>
     </channel-type>
-    <channel-type id="dev_latitude">
+    <channel-type id="dev_latitude" advanced="true">
         <item-type>Number</item-type>
         <label>Latitude</label>
         <description>Latitude of the device location</description>
+        <state readOnly="true" pattern="%s">
+        </state>
     </channel-type>
-    <channel-type id="dev_longitude">
+    <channel-type id="dev_longitude" advanced="true">
         <item-type>Number</item-type>
         <label>Longitude</label>
         <description>Longitude of the device location</description>
+        <state readOnly="true" pattern="%s">
+        </state>
     </channel-type>
-    <channel-type id="dev_elevation">
-        <item-type>Number</item-type>
-        <label>Elevation</label>
-        <description>Elevation at the device location</description>
+    <channel-type id="dev_schedule" advanced="true">
+        <item-type>String</item-type>
+        <label>Running schedule</label>
+        <description>Currently running schedule, if empty no schedule is running</description>
+        <state readOnly="true" pattern="%s">
+        </state>
     </channel-type>
 
 
@@ -169,11 +176,15 @@
         <item-type>String</item-type>
         <label>Zone Name</label>
         <description>Name of the zone as configured in the Rachip App</description>
+        <state readOnly="true" pattern="%s">
+        </state>
     </channel-type>
     <channel-type id="zone_number">
         <item-type>Number</item-type>
         <label>Zone Number</label>
         <description>Zone Number (1-16)</description>
+        <state readOnly="true" pattern="%d">
+        </state>
     </channel-type>
     <channel-type id="zone_enabled">
         <item-type>Switch</item-type>
@@ -195,6 +206,16 @@
         <label>Last Zone Event</label>
         <description>Events can be received when callback is configured.</description>
     </channel-type>
+    <channel-type id="zone_nozzleImageUrl">
+        <item-type>String</item-type>
+        <label>Nozzle Image URL</label>
+        <description>URL for a nozzle image</description>
+        <state readOnly="true" pattern="%s">
+        </state>
+    </channel-type>
+
+
+
     <channel-type id="zone_avlWater">
         <item-type>Number</item-type>
         <label>Available Water</label>
@@ -239,10 +260,5 @@
         <item-type>Number</item-type>
         <label>Nozzle Inches per Hour</label>
         <description>Nozzle's inches per hour</description>
-    </channel-type>
-    <channel-type id="zone_nozzleImageUrl">
-        <item-type>String</item-type>
-        <label>Nozzle Image URL</label>
-        <description>URL for a nozzle image</description>
     </channel-type>
 </thing:thing-descriptions>

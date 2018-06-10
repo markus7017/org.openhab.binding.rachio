@@ -456,16 +456,23 @@ public class RachioApi {
                         f.setAccessible(true);
                         t.setAccessible(true);
                         t.set(toObj, a != null ? a.clone() : null);
-                    } else if ((t
-                            .getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomeNozzle.class)
-                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSoil.class)
-                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSlope.class)
-                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)
-                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)) {
-                        f.setAccessible(true);
-                        t.setAccessible(true);
-                        t.set(toObj, f.get(fromObj));
-                    } else {
+                    } /*
+                       * else if ((t
+                       * .getType() ==
+                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomeNozzle.class)
+                       * || (t.getType() ==
+                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSoil.class)
+                       * || (t.getType() ==
+                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSlope.class)
+                       * || (t.getType() ==
+                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)
+                       * || (t.getType() ==
+                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)) {
+                       * f.setAccessible(true);
+                       * t.setAccessible(true);
+                       * t.set(toObj, f.get(fromObj));
+                       * }
+                       */ else {
                         logger.debug("RachioApiInternal: Unable to update field '{}', '{}'", t.getName(), t.getType());
                     }
                 }

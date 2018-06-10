@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.rachio.internal.api;
 
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +46,8 @@ public class RachioDevice extends RachioCloudDevice {
     public ThingUID dev_uid;
     private HashMap<String, RachioZone> zoneList = new HashMap<String, RachioZone>();
     private RachioDeviceHandler thingHandler = null;
+    public RachioCloudNetworkSettings network = new RachioCloudNetworkSettings();
+    public String scheduleName = "";
 
     @SuppressWarnings("unused")
     public RachioDevice(RachioCloudDevice device) {
@@ -147,10 +151,17 @@ public class RachioDevice extends RachioCloudDevice {
     public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put(Thing.PROPERTY_VENDOR, RachioBindingConstants.BINDING_VENDOR);
-        properties.put(RachioBindingConstants.PROPERTY_NAME, name);
-        properties.put(RachioBindingConstants.PROPERTY_MODEL, model);
+        properties.put(PROPERTY_NAME, name);
+        properties.put(PROPERTY_MODEL, model);
         properties.put(Thing.PROPERTY_SERIAL_NUMBER, serialNumber);
         properties.put(Thing.PROPERTY_MAC_ADDRESS, macAddress);
+        properties.put(PROPERTY_IP_ADDRESS, network.ip);
+        properties.put(PROPERTY_IP_MASK, network.ip);
+        properties.put(PROPERTY_IP_GW, network.gw);
+        properties.put(PROPERTY_IP_DNS1, network.dns1);
+        properties.put(PROPERTY_IP_DNS2, network.dns2);
+        properties.put(PROPERTY_WIFI_RSSI, network.rssi);
+
         return properties;
     }
 
@@ -232,7 +243,7 @@ public class RachioDevice extends RachioCloudDevice {
      *
      * @param newDelay Number of seconds for the Rain Delay mode
      */
-    public void setRainDelay(int newDelay) {
+    public void setRainDelayTime(int newDelay) {
         rainDelay = newDelay;
     }
 
@@ -273,11 +284,18 @@ public class RachioDevice extends RachioCloudDevice {
     }
 
     public void setEvent(RachioEvent event) {
-        lastEvent = new RachioEventString(event).toJson();
+        String s = new RachioEventString(event).toJson();
+        if (!s.isEmpty()) {
+            lastEvent = s;
+        }
     }
 
     public String getEvent() {
         return lastEvent;
+    }
+
+    public void setNetwork(RachioCloudNetworkSettings network) {
+        this.network = network;
     }
 
     public String getAllRunZonesJson(int defaultRuntime) {
