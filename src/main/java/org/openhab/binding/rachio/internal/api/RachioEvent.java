@@ -58,6 +58,7 @@ public class RachioEvent {
     public String timeZone = "";
     public String timestamp = "";
     public String timeForSummary = "";
+    public String startTime = "";
     public String endTime = "";
 
     public long eventDate = -1;
@@ -144,8 +145,9 @@ public class RachioEvent {
 
     // COLD_REBOOT
     public String deviceName = ""; // "deviceName" : "Rachio Turtle Pine House",
-    RachioCloudNetworkSettings network; // "network" : {"gw" : "192.168.1.1", "rssi" : -61, "dns2" : "75.75.76.76",
-                                        // "dns1" : "75.75.75.75", "ip" : "192.168.1.112", "nm" : "255.255.255.0" }
+    public RachioCloudNetworkSettings network; // "network" : {"gw" : "192.168.1.1", "rssi" : -61, "dns2" :
+                                               // "75.75.76.76", "dns1" : "75.75.75.75", "ip" : "192.168.1.112", "nm" :
+                                               // "255.255.255.0" }
     String pin = "";
 
     public RachioApiResult apiResult = new RachioApiResult();
