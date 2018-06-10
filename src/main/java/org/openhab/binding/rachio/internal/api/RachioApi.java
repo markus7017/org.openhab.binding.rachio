@@ -331,12 +331,22 @@ public class RachioApi {
         // }
         //
         logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
-        String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
-                + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
-                + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""
-                + WEATHER_INTELLIGENCE + "\"}, " + "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " + "{\"id\" : \""
-                + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
-                + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_DELTA + "\"} " + "] }";
+        String jsonData = "{ " +
+                "\"device\":{\"id\":\"" + deviceId + "\"}, " +
+                "\"externalId\" : \"" + externalId + "\", " +
+                "\"url\" : \"" + callbackUrl + "\", " +
+                "\"eventTypes\" : [" +
+                "{\"id\" : \"" + WHE_DEVICE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " +
+                "{\"id\" : \"" + WEATHER_INTELLIGENCE + "\"}, " +
+                "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " +
+                "{\"id\" : \"" + WHE_ZONE_DELTA + "\"}, " +
+                "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_ZONE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_RAIN_SENSOR_DETECTION + "\"}, " +
+                "{\"id\" : \"" + WHE_DELTA + "\"} " +
+                "]" +
+                "}";
         httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
     }
 
@@ -446,23 +456,16 @@ public class RachioApi {
                         f.setAccessible(true);
                         t.setAccessible(true);
                         t.set(toObj, a != null ? a.clone() : null);
-                    } /*
-                       * else if ((t
-                       * .getType() ==
-                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomeNozzle.class)
-                       * || (t.getType() ==
-                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSoil.class)
-                       * || (t.getType() ==
-                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSlope.class)
-                       * || (t.getType() ==
-                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)
-                       * || (t.getType() ==
-                       * org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)) {
-                       * f.setAccessible(true);
-                       * t.setAccessible(true);
-                       * t.set(toObj, f.get(fromObj));
-                       * }
-                       */ else {
+                    } else if ((t
+                            .getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomeNozzle.class)
+                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSoil.class)
+                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomSlope.class)
+                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)
+                            || (t.getType() == org.openhab.binding.rachio.internal.api.RachioCloudZone.RachioCustomCrop.class)) {
+                        f.setAccessible(true);
+                        t.setAccessible(true);
+                        t.set(toObj, f.get(fromObj));
+                    } else {
                         logger.debug("RachioApiInternal: Unable to update field '{}', '{}'", t.getName(), t.getType());
                     }
                 }
