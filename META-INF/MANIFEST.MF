@@ -5,10 +5,8 @@ Bundle-Name: Rachio Binding
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-SymbolicName: org.openhab.binding.rachio;singleton:=true
 Bundle-Vendor: openHAB
-Bundle-Version: 2.3.0.qualifier
-Bundle-ClassPath: 
- .,
- lib/gson-2.7.jar
+Bundle-Version: 2.5.0.qualifier
+Bundle-ClassPath: .
 Import-Package: 
  com.google.gson,
  javax.servlet,
