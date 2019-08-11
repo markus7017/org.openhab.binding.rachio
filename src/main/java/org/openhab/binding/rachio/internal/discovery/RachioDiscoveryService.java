@@ -25,6 +25,7 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.rachio.handler.RachioBridgeHandler;
 import org.openhab.binding.rachio.internal.RachioConfiguration;
 import org.openhab.binding.rachio.internal.api.RachioApi;
+import org.openhab.binding.rachio.internal.api.RachioApiException;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.osgi.service.component.annotations.Activate;
@@ -171,9 +172,9 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
             logger.info("{}  Rachio controller initialized.", deviceList.size());
 
             stopScan();
-        } catch (
-
-        Exception e) {
+        } catch (RachioApiException e) {
+            logger.error("RachioDiscovery: Unexpected error while discovering Rachio devices/zones: {}", e.toString());
+        } catch (Throwable e) {
             logger.error("RachioDiscovery: Unexpected error while discovering Rachio devices/zones: {}",
                     e.getMessage());
         }

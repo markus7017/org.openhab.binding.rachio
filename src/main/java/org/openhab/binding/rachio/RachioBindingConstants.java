@@ -58,6 +58,12 @@ public class RachioBindingConstants {
     public static final String PARAM_IPFILTER = "ipFilter";
 
     // List of non-standard Properties
+    public static final String PROPERTY_IP_ADDRESS = "ipAddress";
+    public static final String PROPERTY_IP_MASK = "ipMask";
+    public static final String PROPERTY_IP_GW = "ipGateway";
+    public static final String PROPERTY_IP_DNS1 = "ipDNS1";
+    public static final String PROPERTY_IP_DNS2 = "ipDNS2";
+    public static final String PROPERTY_WIFI_RSSI = "wifiSignal";
     public static final String PROPERTY_APIKEY = "apikey";
     public static final String PROPERTY_NAME = "name";
     public static final String PROPERTY_MODEL = "model";
@@ -83,10 +89,10 @@ public class RachioBindingConstants {
     public static final String CHANNEL_DEVICE_RUN_ZONES = "runZones";
     public static final String CHANNEL_DEVICE_RUN_TIME = "runTime";
     public static final String CHANNEL_DEVICE_STOP = "stop";
-    public static final String CHANNEL_DEVICE_EVENT = "devEvent";
+    public static final String CHANNEL_DEVICE_EVENT = "event";
     public static final String CHANNEL_DEVICE_LATITUDE = "latitude";
     public static final String CHANNEL_DEVICE_LONGITUDE = "longitude";
-    public static final String CHANNEL_DEVICE_ELEVATION = "elevation";
+    public static final String CHANNEL_DEVICE_SCHEDULE = "scheduleName";
     public static final String CHANNEL_DEVICE_RAIN_DELAY = "rainDelay";
 
     // List of all Zone Channel ids
@@ -96,16 +102,19 @@ public class RachioBindingConstants {
     public static final String CHANNEL_ZONE_RUN = "run";
     public static final String CHANNEL_ZONE_RUN_TIME = "runTime";
     public static final String CHANNEL_ZONE_RUN_TOTAL = "runTotal";
-    public static final String CHANNEL_ZONE_EVENT = "zoneEvent";
     public static final String CHANNEL_ZONE_IMAGEURL = "imageUrl";
-    // public static final String CHANNEL_ZONE_AVL_WATER = "avlWater";
-    // public static final String CHANNEL_ZONE_ROOT_DEPTH = "rootDepth";
-    // public static final String CHANNEL_ZONE_EFFICIENCY = "efficiency";
-    // public static final String CHANNEL_ZONE_YARD_SQFT = "yardSqft";
-    // public static final String CHANNEL_ZONE_WATHER_DEPTH = "watherDepth";
-    // public static final String CHANNEL_ZONE_NZ_HEADCAT = "nozzleHeadCat";
-    // public static final String CHANNEL_ZONE_NZ_IPH = "nozzleIph";
-    // public static final String CHANNEL_ZONE_NZ_IMGURL = "nozzleImageUrl";
+    // public static final String CHANNEL_ZONE_EVENT = "zoneEvent";
+    //public static final String CHANNEL_ZONE_AVL_WATER = "avlWater";
+    //public static final String CHANNEL_ZONE_ROOT_DEPTH = "rootDepth";
+    //public static final String CHANNEL_ZONE_EFFICIENCY = "efficiency";
+    //public static final String CHANNEL_ZONE_YARD_SQFT = "yardSqft";
+    //public static final String CHANNEL_ZONE_WATHER_DEPTH = "watherDepth";
+    //public static final String CHANNEL_ZONE_SOIL_TYPE = "soilType";
+    //public static final String CHANNEL_ZONE_SLOPE_TYPE = "slopeType";
+    //public static final String CHANNEL_ZONE_CROP_TYPE = "cropType";
+    //public static final String CHANNEL_ZONE_SHADE_TYPE = "shadeType";
+    //public static final String CHANNEL_ZONE_NOZZLE_TYPE = "nozzleType";
+    //public static final String CHANNEL_ZONE_NOZZLE_IPH = "nozzleIph";
 
     // --------------- Rachio Cloud API
     public static final String HTTP_METHOD_GET = "GET";

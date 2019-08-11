@@ -331,12 +331,22 @@ public class RachioApi {
         // }
         //
         logger.debug("RachioApi: Register WebHook, callback url = '{}'", callbackUrl);
-        String jsonData = "{ " + "\"device\":{\"id\":\"" + deviceId + "\"}, " + "\"externalId\" : \"" + externalId
-                + "\", " + "\"url\" : \"" + callbackUrl + "\", " + "\"eventTypes\" : [" + "{\"id\" : \""
-                + WHE_DEVICE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " + "{\"id\" : \""
-                + WEATHER_INTELLIGENCE + "\"}, " + "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " + "{\"id\" : \""
-                + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
-                + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_DELTA + "\"} " + "] }";
+        String jsonData = "{ " +
+                "\"device\":{\"id\":\"" + deviceId + "\"}, " +
+                "\"externalId\" : \"" + externalId + "\", " +
+                "\"url\" : \"" + callbackUrl + "\", " +
+                "\"eventTypes\" : [" +
+                "{\"id\" : \"" + WHE_DEVICE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_RAIN_DELAY + "\"}, " +
+                "{\"id\" : \"" + WEATHER_INTELLIGENCE + "\"}, " +
+                "{\"id\" : \"" + WHE_WATER_BUDGET + "\"}, " +
+                "{\"id\" : \"" + WHE_ZONE_DELTA + "\"}, " +
+                "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_ZONE_STATUS + "\"}, " +
+                "{\"id\" : \"" + WHE_RAIN_SENSOR_DETECTION + "\"}, " +
+                "{\"id\" : \"" + WHE_DELTA + "\"} " +
+                "]" +
+                "}";
         httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
     }
 
